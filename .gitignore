@@ -1,0 +1,45 @@
+# AEGIS Protocol .gitignore
+
+# Node.js
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+build/
+
+# Environment files (보안)
+.env
+.env.local
+.env.production
+aegis.config.js  # 실제 설정 파일은 커밋하지 않음
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Backups
+backups/
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
