@@ -1,17 +1,17 @@
-# AEGIS Protocol v3.5 Unified
+# AEGIS Protocol v3.6 Unified
 
 > **A**utonomous **E**nhanced **G**uard & **I**nspection **S**ystem
 >
 > 안전한 자율 코딩을 위한 **완전 통합 프레임워크**
 >
-> v3.5 Unified: CI/CD + Observability + Resource Layer 추가
+> v3.6 Unified: Hook Layer (알림 자동화) 추가
 
 ---
 
 ## 1. 개요
 
 ### 1.1 목적
-AEGIS v3.5 Unified는 Claude Code와 함께 사용하는 체계적인 검증 프레임워크입니다.
+AEGIS v3.6 Unified는 Claude Code와 함께 사용하는 체계적인 검증 프레임워크입니다.
 
 **핵심 철학:**
 - 안정적이고 최상의 방향으로 개발
@@ -19,22 +19,23 @@ AEGIS v3.5 Unified는 Claude Code와 함께 사용하는 체계적인 검증 프
 - 재발 방지를 최우선으로 고려
 - 한 번 다룬 문제는 재발하지 않도록 정확하게 구축
 
-### 1.2 v3.5 Unified 핵심 변경
+### 1.2 v3.6 Unified 핵심 변경
 
-| 영역 | v3.1 | v3.5 Unified | 변경 |
+| 영역 | v3.5 | v3.6 Unified | 변경 |
 |------|------|--------------|------|
-| CI/CD | 없음 | GitHub Actions | **신규** |
-| Observability | 없음 | Slack + 외부 모니터링 | **신규** |
-| Resource Layer | 없음 | 메모리/디스크 감시 | **신규** |
-| Feedback Loop | 없음 | 자동 검증 + 수정 | **신규** |
-| Infinite Loop | 없음 | 목표 달성까지 반복 | **신규** |
-| 병렬 실행 | 없음 | 5개 Claude 동시 | **신규** |
+| **Hook Layer** | 없음 | 알림 자동화 | **신규** |
+| PermissionRequest | 없음 | 권한 요청 시 즉시 알림 | **신규** |
+| Stop Hook | 없음 | 응답 완료 시 알림 | **신규** |
+| PostToolUse | 없음 | Write/Edit 후 자동 포맷팅 | **신규** |
+| CI/CD | GitHub Actions | GitHub Actions | 유지 |
+| Feedback Loop | 자동 검증 + 수정 | 자동 검증 + 수정 | 유지 |
+| Infinite Loop | 목표 달성까지 반복 | 목표 달성까지 반복 | 유지 |
 
 ### 1.3 아키텍처
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    AEGIS v3.5 Unified                           │
+│                    AEGIS v3.6 Unified                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  ⚡ COGNITIVE LAYER (사고 도구)                                  │
 │     ├─ ultrathink: 모든 작업에 기본 적용                         │
@@ -43,28 +44,30 @@ AEGIS v3.5 Unified는 Claude Code와 함께 사용하는 체계적인 검증 프
 │  📋 TASK LAYER (작업 추적)                                       │
 │     └─ TodoWrite: Layer 상태 자동 동기화                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  🔄 CI/CD LAYER (자동화) - v3.5 신규                             │
+│  🔔 HOOK LAYER (알림 자동화) - v3.6 신규                         │
+│     ├─ PermissionRequest: 권한 요청 시 즉시 알림                 │
+│     ├─ Stop: 응답 완료 시 사용자 입력 알림                       │
+│     └─ PostToolUse: Write/Edit 후 자동 포맷팅                   │
+├─────────────────────────────────────────────────────────────────┤
+│  🔄 CI/CD LAYER (자동화)                                         │
 │     ├─ GitHub Actions: Push 시 자동 검증                        │
 │     └─ Slack 알림: 성공/실패 자동 전송 (선택)                   │
 ├─────────────────────────────────────────────────────────────────┤
-│  🔍 VALIDATION LAYERS (7-Layer)                                 │
+│  🔍 VALIDATION LAYERS (8-Layer)                                 │
 │     ├─ Layer 0: Schema Validation (SQLite)                     │
 │     ├─ Layer 1: Static Analysis (Build)                        │
 │     ├─ Layer 2: Unit Test                                      │
 │     ├─ Layer 3: Integration Test (API)                         │
 │     ├─ Layer 4: E2E Test (Chrome MCP / Playwright MCP)         │
-│     ├─ Layer 5: Staging Validation                             │
-│     └─ Layer 6: Production Monitoring                          │
+│     ├─ Layer 5: Production E2E                                 │
+│     ├─ Layer 6: Production Monitoring                          │
+│     └─ Layer 7: Hook-based Notification                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  📊 OBSERVABILITY LAYER - v3.5 신규                              │
+│  📊 OBSERVABILITY LAYER                                          │
 │     ├─ 에러 로그 모니터링                                        │
 │     └─ Slack/Discord 알림 (선택)                                │
 ├─────────────────────────────────────────────────────────────────┤
-│  🧹 RESOURCE LAYER - v3.5 신규                                   │
-│     ├─ Memory Guard: 과도한 메모리 사용 감지                     │
-│     └─ Disk Alert: 디스크 용량 알림                             │
-├─────────────────────────────────────────────────────────────────┤
-│  🔁 AUTOMATION LAYER - v3.5 신규                                 │
+│  🔁 AUTOMATION LAYER                                             │
 │     ├─ Feedback Loop: 자동 검증 + 자동 수정                     │
 │     └─ Infinite Loop: 목표 달성까지 무한 반복                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -184,11 +187,76 @@ pkill -f "ms-playwright" || true
 ./scripts/aegis-validate.sh --monitor
 ```
 
+### Layer 7: Hook-based Notification
+
+**목적**: Claude 작업 상태를 사용자에게 실시간 알림
+
+**구성**:
+- **PermissionRequest Hook**: 권한 요청 시 macOS/Linux 알림
+- **Stop Hook**: 응답 완료 시 사용자 입력 알림
+- **PostToolUse Hook**: Write/Edit 후 자동 포맷팅 (Prettier + ESLint)
+
 ---
 
-## 5. Automation Layer (자동화) - v3.5 신규
+## 5. Hook Layer (알림 자동화) - v3.6 신규
 
-### 5.1 Feedback Loop (피드백 루프)
+### 5.1 PermissionRequest Hook
+
+**목적**: Claude가 권한을 요청할 때 사용자에게 즉시 알림
+
+**설정**:
+```json
+{
+  "hooks": {
+    "PermissionRequest": [{
+      "matcher": "*",
+      "command": ".claude/hooks/notify-user.sh '권한 요청' 'Claude Code'"
+    }]
+  }
+}
+```
+
+### 5.2 Stop Hook
+
+**목적**: Claude 응답이 완료되어 사용자 입력이 필요할 때 알림
+
+**설정**:
+```json
+{
+  "hooks": {
+    "Stop": [{
+      "command": ".claude/hooks/notify-user.sh '사용자 입력 필요' 'Claude Code'"
+    }]
+  }
+}
+```
+
+### 5.3 PostToolUse Hook
+
+**목적**: Write/Edit 도구 사용 후 자동으로 코드 포맷팅
+
+**설정**:
+```json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Write|Edit",
+      "command": ".claude/hooks/post-tool-format.sh \"$TOOL_NAME\" \"$FILE_PATH\""
+    }]
+  }
+}
+```
+
+**지원 파일 형식**:
+- TypeScript/JavaScript (`.ts`, `.tsx`, `.js`, `.jsx`)
+- CSS/SCSS (`.css`, `.scss`, `.sass`, `.less`)
+- JSON/YAML (`.json`, `.yaml`, `.yml`)
+
+---
+
+## 6. Automation Layer (자동화)
+
+### 6.1 Feedback Loop (피드백 루프)
 
 **모든 코드 작업 완료 후 Claude가 자동으로:**
 
@@ -212,7 +280,7 @@ pkill -f "ms-playwright" || true
 
 **수동 호출**: `/feedback-loop`
 
-### 5.2 Infinite Loop (무한 이터레이션 / Ralph Wiggum 모드)
+### 6.2 Infinite Loop (무한 이터레이션 / Ralph Wiggum 모드)
 
 **복잡한 작업 시 Claude가 자동으로:**
 
@@ -229,7 +297,7 @@ pkill -f "ms-playwright" || true
 
 **수동 호출**: `/infinite-loop`
 
-### 5.3 자동화 체크리스트
+### 6.3 자동화 체크리스트
 
 **코드 작업 시작 전:**
 - [ ] 작업 범위 확인
@@ -243,9 +311,9 @@ pkill -f "ms-playwright" || true
 
 ---
 
-## 6. 병렬 실행 가이드 - v3.5 신규
+## 7. 병렬 실행 가이드
 
-### 6.1 5개 Claude 동시 운영
+### 7.1 5개 Claude 동시 운영
 
 **작업 영역 분리 (필수)**:
 
@@ -259,7 +327,7 @@ pkill -f "ms-playwright" || true
 
 **원칙**: 같은 파일을 2개 이상의 Claude가 동시에 수정하지 않음
 
-### 6.2 충돌 방지
+### 7.2 충돌 방지
 
 | 영역 | 충돌 여부 | 대응 |
 |------|----------|------|
@@ -268,7 +336,7 @@ pkill -f "ms-playwright" || true
 | **로컬 빌드** | 있음 | **1개 Claude만 담당** |
 | **Git 커밋** | 있음 | **순차 실행**, git pull 필수 |
 
-### 6.3 실행 예시
+### 7.3 실행 예시
 
 ```bash
 # 터미널 1 - API
@@ -294,7 +362,7 @@ cd ~/project/post_style && claude
 
 ---
 
-## 7. Plan 모드 워크플로우 - v3.5 신규
+## 8. Plan 모드 워크플로우
 
 **대부분의 세션을 Plan 모드에서 시작**
 
@@ -310,7 +378,7 @@ cd ~/project/post_style && claude
 
 ---
 
-## 8. 체크리스트
+## 9. 체크리스트
 
 ### Pre-Commit
 ```
@@ -334,7 +402,7 @@ cd ~/project/post_style && claude
 
 ---
 
-## 9. CLI 사용법
+## 10. CLI 사용법
 
 ```bash
 # 전체 검증 (Layer 0-4)
@@ -355,7 +423,7 @@ cd ~/project/post_style && claude
 
 ---
 
-## 10. 버전 히스토리
+## 11. 버전 히스토리
 
 | 버전 | 날짜 | 변경 내용 |
 |------|------|----------|
@@ -363,9 +431,10 @@ cd ~/project/post_style && claude
 | v2.0 | - | Cognitive Layer 추가 |
 | v3.0 | - | 7-Layer 시스템으로 개편 |
 | v3.1 | 2026-01-04 | npm → pnpm 전환 |
-| **v3.5** | **2026-01-06** | **Unified** - Automation Layer (Feedback/Infinite Loop), 병렬 실행 가이드, Plan 모드 워크플로우, CI/CD/Observability/Resource Layer 추가 |
+| v3.5 | 2026-01-06 | Unified - Automation Layer, 병렬 실행 가이드, Plan 모드 워크플로우 |
+| **v3.6** | **2026-01-07** | **Hook Layer** - 알림 자동화 (PermissionRequest/Stop/PostToolUse) |
 
 ---
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-07
 **Maintainer**: Claude AI & minjaebaak
