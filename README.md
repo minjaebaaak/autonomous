@@ -1,18 +1,18 @@
-# AEGIS Protocol
+# AEGIS Protocol v3.6
 
 > **A**utonomous **E**nhanced **G**uard & **I**nspection **S**ystem
-
-Claude Code와 함께 사용하는 7-Layer 검증 프레임워크입니다.
+>
+> Claude Code와 함께 사용하는 8-Layer 검증 프레임워크
 
 ---
 
 ## 개요
 
-AEGIS는 소프트웨어 개발 시 품질을 보장하기 위한 체계적인 검증 프로토콜입니다.
+AEGIS는 Claude Code를 활용한 소프트웨어 개발 시 품질을 보장하기 위한 체계적인 검증 프로토콜입니다.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        AEGIS v3.1                               │
+│                    AEGIS v3.6 Unified                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  ⚡ COGNITIVE LAYER (사고 도구)                                  │
 │     ├─ ultrathink: 모든 작업에 기본 적용                         │
@@ -21,67 +21,114 @@ AEGIS는 소프트웨어 개발 시 품질을 보장하기 위한 체계적인 �
 │  📋 TASK LAYER (작업 추적)                                       │
 │     └─ TodoWrite: 모든 작업 현황 추적                            │
 ├─────────────────────────────────────────────────────────────────┤
-│  🔍 VALIDATION LAYERS (7-Layer 검증)                            │
-│     Layer 0: Schema Validation    | DB 스키마 검증              │
-│     Layer 1: Static Analysis      | 빌드 검증                   │
-│     Layer 2: Unit Test            | 단위 테스트                 │
-│     Layer 3: Integration Test     | 통합 테스트                 │
-│     Layer 4: E2E Test             | Playwright MCP              │
-│     Layer 5: Staging Validation   | 스테이징 검증               │
-│     Layer 6: Production Monitor   | 프로덕션 모니터링           │
+│  🔔 HOOK LAYER (알림 자동화) - v3.6 신규                         │
+│     ├─ PermissionRequest: 권한 요청 시 즉시 알림                 │
+│     ├─ Stop: 응답 완료 시 사용자 입력 알림                       │
+│     └─ PostToolUse: Write/Edit 후 자동 포맷팅                   │
+├─────────────────────────────────────────────────────────────────┤
+│  🔄 CI/CD LAYER (자동화)                                         │
+│     ├─ GitHub Actions: Push 시 자동 검증                        │
+│     └─ Slack 알림: 성공/실패 자동 전송                          │
+├─────────────────────────────────────────────────────────────────┤
+│  🔍 VALIDATION LAYERS (8-Layer 검증)                            │
+│     ├─ Layer 0: Schema Validation                               │
+│     ├─ Layer 1: Static Analysis (Build)                         │
+│     ├─ Layer 2: Unit Test                                       │
+│     ├─ Layer 3: Integration Test (API)                          │
+│     ├─ Layer 4: E2E Test (Playwright MCP + Chrome)              │
+│     ├─ Layer 5: Production E2E                                  │
+│     ├─ Layer 6: Production Monitoring                           │
+│     └─ Layer 7: Hook-based Notification                         │
+├─────────────────────────────────────────────────────────────────┤
+│  🔁 AUTOMATION LAYER                                             │
+│     ├─ Feedback Loop: 자동 검증 + 수정 (최대 3회)               │
+│     └─ Infinite Loop: 목표 달성까지 반복 (Ralph Wiggum)         │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 주요 기능
+
+### 1. 8-Layer 검증 시스템
+| Layer | 이름 | 검증 대상 | 도구/명령어 |
+|-------|------|----------|------------|
+| 0 | Schema Validation | DB 스키마 변경 | `--schema <table>` |
+| 1 | Static Analysis | 빌드, 타입 체크 | `pnpm build` |
+| 2 | Unit Test | 개별 함수/모듈 | `pnpm test` |
+| 3 | Integration Test | API 엔드포인트 | `--api` |
+| 4 | E2E Test | 전체 사용자 흐름 | Playwright MCP |
+| 5 | Production E2E | 프로덕션 검증 | Chrome MCP |
+| 6 | Production Monitor | 에러 로그 모니터링 | `--monitor` |
+| 7 | Hook Notification | 알림 자동화 | PermissionRequest/Stop |
+
+### 2. 자동화 명령어
+| 명령 | 기능 |
+|------|------|
+| `/commit` | 변경사항 분석 + 스마트 커밋 메시지 생성 |
+| `/feedback-loop` | 자동 검증 + 수정 (최대 3회 반복) |
+| `/infinite-loop` | 목표 달성까지 무한 반복 (Ralph Wiggum 모드) |
+| `/verify` | 전체 Layer 검증 |
+
+### 3. 커스텀 스킬
+| 스킬 | 기능 |
+|------|------|
+| `verify-app` | E2E 검증 (로그인, 핵심 기능 테스트) |
+| `code-simplifier` | 코드 정리 + 최적화 |
+
+### 4. Hook 기반 알림
+```json
+{
+  "hooks": {
+    "PermissionRequest": [{"matcher": "*", "command": "notify-user.sh"}],
+    "Stop": [{"command": "notify-user.sh '사용자 입력 필요'"}],
+    "PostToolUse": [{"matcher": "Write|Edit", "command": "post-tool-format.sh"}]
+  }
+}
 ```
 
 ---
 
 ## 빠른 시작
 
-### 1. 새 프로젝트에 AEGIS 적용
-
+### 1. 저장소 클론
 ```bash
-# 방법 1: setup.sh 사용 (권장)
-curl -fsSL https://raw.githubusercontent.com/minjaebaaak/aegis-protocol/master/scripts/setup.sh | bash -s -- /path/to/your/project
-
-# 방법 2: 수동 복사
-git clone https://github.com/minjaebaaak/aegis-protocol.git
-cp aegis-protocol/CLAUDE.md.template your-project/CLAUDE.md
-cp aegis-protocol/aegis.config.example.js your-project/aegis.config.js
-cp -r aegis-protocol/scripts your-project/
+git clone git@github.com:minjaebaak/aegis-protocol.git
+cd aegis-protocol
 ```
 
-### 2. 설정 파일 수정
+### 2. 프로젝트에 설치
+```bash
+./scripts/install.sh /path/to/your/project
+```
 
+### 3. 설정 파일 수정
 `aegis.config.js`를 프로젝트에 맞게 수정:
-
 ```javascript
 module.exports = {
   project: {
     name: 'your-project-name',
-    port: 3001,
+    type: 'monorepo',  // or 'single'
+    packageManager: 'pnpm',
   },
   server: {
     ip: 'your.server.ip',
     user: 'your-user',
     path: '/path/to/project',
   },
-  pm2: {
-    processName: 'your-app-production',
-  },
-  database: {
-    type: 'postgresql', // postgresql, mysql, mongodb
-    host: 'localhost',
-    port: 5432,
+  validation: {
+    buildCommand: 'pnpm build',
+    testCommand: 'pnpm test',
+    lintCommand: 'pnpm lint',
   },
 };
 ```
 
-### 3. CLAUDE.md 커스터마이징
-
-`CLAUDE.md.template`을 `CLAUDE.md`로 복사하고 `{{PLACEHOLDER}}`를 실제 값으로 교체:
-
+### 4. CLAUDE.md 커스터마이징
 ```bash
+# 템플릿에서 CLAUDE.md 생성
 cp CLAUDE.md.template CLAUDE.md
-# 편집기로 열어서 {{PROJECT_NAME}}, {{SERVER_IP}} 등 수정
+# 편집기로 열어서 플레이스홀더 수정
 ```
 
 ---
@@ -90,53 +137,40 @@ cp CLAUDE.md.template CLAUDE.md
 
 ```
 aegis-protocol/
-├── README.md                    # 이 파일
-├── CLAUDE.md.template           # 프로젝트용 CLAUDE.md 템플릿
-├── aegis.config.example.js      # 설정 파일 예시
+├── README.md                       # 이 파일
+├── CLAUDE.md.template              # 프로젝트용 CLAUDE.md 템플릿
+├── aegis.config.example.js         # 설정 파일 예시
+├── LICENSE                         # MIT License
+│
 ├── .0/
-│   └── AEGIS_PROTOCOL.md        # 7-Layer 검증 프로토콜 상세
+│   └── AEGIS_PROTOCOL.md          # 8-Layer 검증 프로토콜 상세
+│
+├── .claude/
+│   ├── hooks/
+│   │   ├── notify-user.sh         # macOS/Linux 알림 스크립트
+│   │   └── post-tool-format.sh    # 자동 포맷팅 스크립트
+│   ├── commands/
+│   │   ├── commit.md              # 스마트 커밋
+│   │   ├── feedback-loop.md       # 피드백 루프
+│   │   ├── infinite-loop.md       # Ralph Wiggum 모드
+│   │   └── verify.md              # 전체 검증
+│   └── skills/
+│       ├── verify-app/            # E2E 검증 스킬
+│       └── code-simplifier/       # 코드 정리 스킬
+│
+├── templates/
+│   └── aegis.config.js.template   # 설정 파일 템플릿
+│
 ├── scripts/
-│   ├── aegis-validate.sh        # 범용 검증 스크립트
-│   ├── deploy.sh.template       # 배포 스크립트 템플릿
-│   ├── rollback.sh              # 롤백 스크립트
-│   └── setup.sh                 # 초기 설정 스크립트
-├── .npmrc                       # pnpm 설정
-├── .gitignore                   # Git 무시 파일
-└── LICENSE                      # MIT 라이선스
-```
-
----
-
-## 7-Layer 검증 상세
-
-| Layer | 이름 | 검증 대상 | 도구/명령어 |
-|-------|------|----------|------------|
-| 0 | Schema Validation | DB 스키마 변경 | `--schema <table>` |
-| 1 | Static Analysis | 빌드, 타입 체크 | `pnpm build` |
-| 2 | Unit Test | 개별 함수/모듈 | `pnpm test` |
-| 3 | Integration Test | API 엔드포인트 | `--api` |
-| 4 | E2E Test | 전체 사용자 흐름 | Playwright MCP |
-| 5 | Staging Validation | 스테이징 환경 | 수동 검증 |
-| 6 | Production Monitor | 프로덕션 상태 | `--monitor` |
-
-### 필수 체크리스트
-
-**Pre-Commit:**
-```
-[ ] Layer 0: 새 DB 컬럼 검증
-[ ] Layer 1: 빌드 검증
-```
-
-**Pre-Deploy:**
-```
-[ ] Layer 0-4 모두 통과
-[ ] git push 완료
-```
-
-**Post-Deploy:**
-```
-[ ] Layer 6: 에러 로그 확인
-[ ] Layer 4: 프로덕션 E2E 검증
+│   ├── install.sh                 # 설치 스크립트
+│   ├── aegis-validate.sh          # 검증 스크립트
+│   ├── deploy.sh.template         # 배포 템플릿
+│   └── rollback.sh                # 롤백 스크립트
+│
+└── docs/
+    ├── INSTALLATION.md            # 설치 가이드
+    ├── CONFIGURATION.md           # 설정 가이드
+    └── COMMANDS.md                # 명령어 레퍼런스
 ```
 
 ---
@@ -144,7 +178,6 @@ aegis-protocol/
 ## 사용 예시
 
 ### AEGIS 검증 실행
-
 ```bash
 # 전체 검증
 ./scripts/aegis-validate.sh --all
@@ -159,62 +192,62 @@ aegis-protocol/
 ./scripts/aegis-validate.sh --schema users email
 ```
 
-### 배포
-
+### 자동 피드백 루프
 ```bash
-# Production 배포
-./scripts/deploy.sh production
-
-# Dry-run (미리보기)
-./scripts/deploy.sh production --dry-run
+# Claude Code에서 /feedback-loop 명령 실행
+# 자동으로 빌드 → 테스트 → 린트 검증
+# 실패 시 자동 수정 (최대 3회)
 ```
 
-### 롤백
-
+### Ralph Wiggum 모드 (무한 이터레이션)
 ```bash
-# 특정 백업으로 롤백
-./scripts/rollback.sh backups/20241028_211630
+# Claude Code에서 /infinite-loop 명령 실행
+# 목표 달성까지 자동 반복 (최대 10회)
 ```
 
 ---
 
-## Claude Code와 함께 사용
+## 병렬 실행 지원
 
-AEGIS는 Claude Code의 다음 기능과 통합됩니다:
+5개의 Claude 세션을 동시에 운영 가능:
+
+| Claude | 담당 영역 | 디렉토리 |
+|--------|----------|---------|
+| 1 | API 개발 | `server/src/routes/`, `server/src/services/` |
+| 2 | 프론트엔드 | `app/src/components/`, `app/src/pages/` |
+| 3 | 상태 관리 | `app/src/stores/`, `app/src/hooks/` |
+| 4 | 테스트/문서 | `__tests__/`, `.0/` |
+| 5 | 버그 수정 | 특정 이슈 집중 |
+
+**충돌 방지 규칙:**
+- 빌드는 1개 Claude만 담당
+- Git 커밋은 순차 실행
+- 같은 파일 동시 수정 금지
+
+---
+
+## Claude Code 통합
 
 | Claude 기능 | AEGIS 활용 |
 |------------|-----------|
 | ultrathink | 모든 작업에 기본 적용 |
 | Sequential Thinking MCP | 복잡한 문제 분석 |
-| TodoWrite | 작업 추적 |
+| TodoWrite | Layer별 작업 추적 |
 | Playwright MCP | Layer 4 E2E 테스트 |
-
-### CLAUDE.md 예시
-
-```markdown
-# AEGIS Protocol v3.1
-
-## 필수 준수 사항
-- ultrathink 사용
-- Sequential Thinking MCP로 복잡한 문제 분석
-- TodoWrite로 작업 추적
-- 7-Layer 검증 준수
-```
+| Chrome MCP | Layer 5 프로덕션 검증 |
 
 ---
 
-## 기술 스택 호환성
+## 버전 히스토리
 
-| 스택 | 지원 |
-|------|------|
-| Node.js (pnpm) | ✅ 완벽 지원 |
-| Python (pip/poetry) | ✅ 지원 |
-| Go | ✅ 지원 |
-| PostgreSQL | ✅ 완벽 지원 |
-| MySQL | ✅ 지원 |
-| MongoDB | ✅ 지원 |
-| Docker | ✅ 지원 |
-| PM2 | ✅ 완벽 지원 |
+| 버전 | 날짜 | 변경 내용 |
+|------|------|----------|
+| v1.0 | - | 기본 5단계 체크리스트 |
+| v2.0 | - | Cognitive Layer 추가 |
+| v3.0 | 2026-01-04 | 7-Layer 시스템으로 개편 |
+| v3.1 | 2026-01-04 | npm → pnpm 전환 |
+| v3.5 | 2026-01-05 | Unified - Automation Layer, 병렬 실행 지원 |
+| v3.6 | 2026-01-07 | **Hook Layer** - 알림 자동화 (PermissionRequest/Stop) |
 
 ---
 
@@ -224,17 +257,6 @@ MIT License - 자유롭게 사용, 수정, 배포 가능
 
 ---
 
-## 기여
-
-이슈와 PR을 환영합니다!
-
-1. Fork
-2. Feature branch 생성
-3. Commit
-4. PR 생성
-
----
-
-**Created by**: Claude AI & minjaebaaak
-**Version**: 3.1
-**Last Updated**: 2026-01-04
+**Created by**: Claude AI & minjaebaak
+**Version**: 3.6 Unified
+**Last Updated**: 2026-01-07
