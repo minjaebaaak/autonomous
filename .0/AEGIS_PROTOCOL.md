@@ -1,10 +1,10 @@
-# AEGIS Protocol v3.6 Unified
+# AEGIS Protocol v3.7 Unified
 
 > **A**utonomous **E**nhanced **G**uard & **I**nspection **S**ystem
 >
 > 안전한 자율 코딩을 위한 **완전 통합 프레임워크**
 >
-> v3.6 Unified: Hook Layer (알림 자동화) 추가
+> v3.7 Unified: Playwright MCP 새 탭 필수 규칙 추가
 
 ---
 
@@ -19,14 +19,15 @@ AEGIS v3.6 Unified는 Claude Code와 함께 사용하는 체계적인 검증 프
 - 재발 방지를 최우선으로 고려
 - 한 번 다룬 문제는 재발하지 않도록 정확하게 구축
 
-### 1.2 v3.6 Unified 핵심 변경
+### 1.2 v3.7 Unified 핵심 변경
 
-| 영역 | v3.5 | v3.6 Unified | 변경 |
+| 영역 | v3.6 | v3.7 Unified | 변경 |
 |------|------|--------------|------|
-| **Hook Layer** | 없음 | 알림 자동화 | **신규** |
-| PermissionRequest | 없음 | 권한 요청 시 즉시 알림 | **신규** |
-| Stop Hook | 없음 | 응답 완료 시 알림 | **신규** |
-| PostToolUse | 없음 | Write/Edit 후 자동 포맷팅 | **신규** |
+| **Playwright MCP 새 탭** | 없음 | 필수 워크플로우 | **신규** |
+| Hook Layer | 알림 자동화 | 알림 자동화 | 유지 |
+| PermissionRequest | 권한 요청 시 즉시 알림 | 권한 요청 시 즉시 알림 | 유지 |
+| Stop Hook | 응답 완료 시 알림 | 응답 완료 시 알림 | 유지 |
+| PostToolUse | Write/Edit 후 자동 포맷팅 | Write/Edit 후 자동 포맷팅 | 유지 |
 | CI/CD | GitHub Actions | GitHub Actions | 유지 |
 | Feedback Loop | 자동 검증 + 수정 | 자동 검증 + 수정 | 유지 |
 | Infinite Loop | 목표 달성까지 반복 | 목표 달성까지 반복 | 유지 |
@@ -164,6 +165,46 @@ pnpm test:integration
 ```bash
 # Playwright Chromium만 종료 (일반 Chrome은 유지!)
 pkill -f "ms-playwright" || true
+```
+
+##### 새 탭 필수 규칙 (CRITICAL - v3.7)
+
+> **모든 Playwright MCP 작업은 새 탭에서 수행해야 함**
+
+**필수 워크플로우**:
+```
+1. browser_tabs(action: "new")     - 새 탭 생성
+2. browser_tabs(action: "list")    - 탭 목록 확인하여 새 탭 index 파악
+3. browser_tabs(action: "select", index: N) - 새 탭 선택
+4. browser_navigate(url: "...")    - URL 이동
+5. ... 작업 수행 ...
+6. browser_tabs(action: "close")   - 정리 (선택)
+```
+
+**금지 사항**:
+| 금지 | 이유 |
+|------|------|
+| 기존 탭 재사용 | 다른 세션이 열었을 수 있음 |
+| about:blank에서 바로 navigate | 탭 상태 불명확 |
+| 탭 index 하드코딩 | list로 항상 확인 필요 |
+
+**올바른 사용 예시**:
+```javascript
+// 1. 새 탭 생성
+browser_tabs(action: "new")
+
+// 2. 탭 목록 확인
+browser_tabs(action: "list")
+// 출력: [{ index: 0, url: "..." }, { index: 1, url: "about:blank" }]
+
+// 3. 새 탭(마지막 index) 선택
+browser_tabs(action: "select", index: 1)
+
+// 4. URL 이동
+browser_navigate(url: "http://localhost:3000")
+
+// 5. 스냅샷 확인
+browser_snapshot()
 ```
 
 #### Layer 4-B: Chrome MCP (프로덕션)
@@ -432,9 +473,10 @@ cd ~/project/post_style && claude
 | v3.0 | - | 7-Layer 시스템으로 개편 |
 | v3.1 | 2026-01-04 | npm → pnpm 전환 |
 | v3.5 | 2026-01-06 | Unified - Automation Layer, 병렬 실행 가이드, Plan 모드 워크플로우 |
-| **v3.6** | **2026-01-07** | **Hook Layer** - 알림 자동화 (PermissionRequest/Stop/PostToolUse) |
+| v3.6 | 2026-01-07 | Hook Layer - 알림 자동화 (PermissionRequest/Stop/PostToolUse) |
+| **v3.7** | **2026-01-08** | **Playwright MCP 새 탭 필수 규칙** - 탭 충돌, about:blank 무한 접속 방지 |
 
 ---
 
-**Last Updated**: 2026-01-07
+**Last Updated**: 2026-01-08
 **Maintainer**: Claude AI & minjaebaak
