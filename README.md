@@ -1,8 +1,31 @@
-# AEGIS Protocol v3.6
+# AEGIS Protocol v3.7
 
 > **A**utonomous **E**nhanced **G**uard & **I**nspection **S**ystem
 >
 > Claude Code와 함께 사용하는 8-Layer 검증 프레임워크
+
+---
+
+## Origin (기원)
+
+**AEGIS Protocol은 [ARKLink Deep_scAn](https://deep-scan.ai) 프로젝트에서 탄생했습니다.**
+
+| 항목 | 내용 |
+|------|------|
+| **원본 프로젝트** | ARKLink Deep_scAn |
+| **프로젝트 목적** | 불법 딥페이크 콘텐츠 탐지 및 모니터링 시스템 |
+| **탄생 시기** | 2026년 1월 |
+| **개발 환경** | Claude Code (Anthropic) |
+| **발전 과정** | 프로젝트 특화 → 범용 프레임워크 |
+
+Deep_scAn 프로젝트를 개발하면서 Claude Code와 함께 체계적인 검증 시스템의 필요성을 느꼈고,
+이를 AEGIS Protocol이라는 범용 프레임워크로 발전시켰습니다.
+
+**핵심 철학** (Deep_scAn에서 계승):
+- 안정적이고 최상의 방향으로 개발
+- 시간은 충분함 - 성급하게 진행하지 말 것
+- 재발 방지를 최우선으로 고려
+- 한 번 다룬 문제는 재발하지 않도록 정확하게 구축
 
 ---
 
@@ -12,7 +35,7 @@ AEGIS는 Claude Code를 활용한 소프트웨어 개발 시 품질을 보장하
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    AEGIS v3.6 Unified                           │
+│                    AEGIS v3.7 Unified                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  ⚡ COGNITIVE LAYER (사고 도구)                                  │
 │     ├─ ultrathink: 모든 작업에 기본 적용                         │
@@ -247,7 +270,8 @@ aegis-protocol/
 | v3.0 | 2026-01-04 | 7-Layer 시스템으로 개편 |
 | v3.1 | 2026-01-04 | npm → pnpm 전환 |
 | v3.5 | 2026-01-05 | Unified - Automation Layer, 병렬 실행 지원 |
-| v3.6 | 2026-01-07 | **Hook Layer** - 알림 자동화 (PermissionRequest/Stop) |
+| v3.6 | 2026-01-07 | Hook Layer - 알림 자동화 (PermissionRequest/Stop) |
+| **v3.7** | **2026-01-08** | **Playwright MCP 새 탭 필수 규칙** - 탭 충돌 방지 |
 
 ---
 
@@ -257,6 +281,7 @@ MIT License - 자유롭게 사용, 수정, 배포 가능
 
 ---
 
+**Origin**: [ARKLink Deep_scAn](https://deep-scan.ai) 프로젝트에서 탄생
 **Created by**: Claude AI & minjaebaak
-**Version**: 3.6 Unified
-**Last Updated**: 2026-01-07
+**Version**: 3.7 Unified
+**Last Updated**: 2026-01-08
