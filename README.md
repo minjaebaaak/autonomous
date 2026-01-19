@@ -21,7 +21,7 @@
 
 ## 설치
 
-`.claude/commands/` 디렉토리에 `autonomous.md` 파일을 복사합니다:
+### 기본 설치 (autonomous.md만)
 
 ```bash
 # 프로젝트별 설치
@@ -34,6 +34,30 @@ mkdir -p ~/.claude/commands
 curl -o ~/.claude/commands/autonomous.md \
   https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
 ```
+
+### 전체 설치 (CLAUDE.md 포함 - 권장)
+
+한국어 응답 및 기본 행동 규칙을 포함한 CLAUDE.md도 함께 설치합니다:
+
+```bash
+# 프로젝트별 설치 (권장)
+mkdir -p .claude/commands
+curl -o .claude/CLAUDE.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
+curl -o .claude/commands/autonomous.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
+
+# 전역 설치
+mkdir -p ~/.claude/commands
+curl -o ~/.claude/CLAUDE.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
+curl -o ~/.claude/commands/autonomous.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
+```
+
+> **CLAUDE.md vs autonomous.md**
+> - `CLAUDE.md`: 프로젝트 규칙 (언어, 행동 방식)
+> - `autonomous.md`: 실행 모드 커맨드 (어떻게 작업할지)
 
 ---
 
