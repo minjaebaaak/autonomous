@@ -1,6 +1,24 @@
-# Autonomous Mode v2.5 - AEGIS + Ralph Loop + Auto-Commit
+# Autonomous Mode v2.6 - AEGIS + Ralph Loop + Auto-Commit + 문서 동기화
 
 > **이제 `/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
+
+---
+
+## 📊 상태 문서 시스템 (v2.6 신규)
+
+> **기술표와 상태 페이지는 프로젝트의 Single Source of Truth**
+
+### 필수 문서
+| 문서 | 위치 | 역할 |
+|------|------|------|
+| **기술표** | `docs/technical-reference.html` | 코드 구조/함수/의존성 문서화 |
+| **PROJECT_DOCUMENTATION.md** | 루트 | 전체 프로젝트 구조 및 히스토리 |
+
+### 🔴 핵심 개발 원칙
+1. **기술표 기반 개발**: 작업 전 기술표에서 관련 파일/함수 확인
+2. **기술표 동기화**: 코드 변경 시 기술표도 **반드시** 업데이트
+3. **커밋 전 확인**: 기술표 업데이트 없이 코드 커밋 **금지**
+4. **코드와 문서는 한 커밋에**: 코드만 커밋하고 문서는 나중에 = **규칙 위반**
 
 ---
 
@@ -11,6 +29,7 @@
 | **📚 기술표 참조** | 작업 전 기술표에서 파일/함수 확인 | ✅ 자동 |
 | **📝 기술표 업데이트** | 코드 변경 후 기술표 자동 업데이트 | ✅ 자동 |
 | **🔄 autonomous 자동 커밋** | autonomous.md 개선 시 자동 git 반영 | ✅ 자동 (v2.5) |
+| **📋 커밋 전 문서 확인** | 기술표 업데이트 강제 확인 | ✅ 자동 (v2.6) |
 | **AEGIS Protocol** | 7-Layer 검증 프레임워크 | ✅ 자동 |
 | **ultrathink** | 심층 분석 모드 | ✅ 자동 |
 | **Sequential Thinking** | 복잡한 문제 시 단계별 사고 | ✅ 필요 시 |
@@ -33,22 +52,11 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 
 > **🔴 모든 작업 전 기술표를 먼저 확인하여 관련 파일과 함수를 파악할 것**
 
-**기술표 위치**: `docs/technical-reference.html`
+**기술표 위치**: `docs/technical-reference.html` (프로젝트별 설정)
 
 **참조 방법**:
 1. 기술표 HTML 파일 읽기: `Read docs/technical-reference.html`
-2. 작업과 관련된 섹션 확인:
-
-| 작업 유형 | 참조 섹션 |
-|----------|---------|
-| 파워링크/브랜드 콘텐츠/VIEW/뉴스 | **A. SERP 수집** |
-| 네이버 로그인/세션/쿠키 | **B. 로그인/세션** |
-| 자사 콘텐츠 표시/소유권 | **C. 소유권 감지** |
-| 스크래핑/OCR/LLM 분석 | **D. 콘텐츠 분석** |
-| 스케줄러/알림/배치 | **E. 모니터링** |
-| 경쟁사 기능 | **F. 경쟁사 분석** |
-| UI 페이지/버그 | **G. 프론트엔드** |
-| 전체 구조 이해 | **H. 아키텍처** |
+2. 작업과 관련된 섹션 확인
 
 **필수 확인 체크리스트**:
 ```
@@ -67,17 +75,6 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 ### Phase 1.6: 📝 기술표 업데이트 의무
 
 > **🔴 코드 변경 후 관련 기술표 섹션 자동 업데이트 - 사용자 요청 불필요**
-
-**업데이트 매핑**:
-| 수정 영역 | 업데이트 섹션 |
-|----------|-------------|
-| collectors/, serp_collector_service.py | A. SERP 수집 |
-| auto_login_service.py, naver_*.py | B. 로그인/세션 |
-| ownership_*, brand_checker.py | C. 소유권 감지 |
-| enhanced_content_scraper.py, *_llm_*.py | D. 콘텐츠 분석 |
-| scheduler_service.py, monitoring_*.py | E. 모니터링 |
-| competitor_*.py | F. 경쟁사 분석 |
-| frontend/ 페이지 컴포넌트 | G. 프론트엔드 |
 
 **필수 업데이트 워크플로우**:
 ```
@@ -131,6 +128,29 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 - 모든 작업 완료까지 계속 진행
 - 오류 발생 시 자체 해결 시도 (최대 3회)
 - 배포 전 테스트 포함
+
+### Phase 3.5: 📝 커밋 전 문서 확인 (🔴 강제) - v2.6 신규
+
+> **코드 커밋 전에 반드시 기술표/상태 페이지 업데이트 확인**
+
+**필수 체크리스트** (커밋 전 매번 확인):
+```
+[ ] 1. 수정한 파일 목록 확인 (git status)
+[ ] 2. Phase 1.6 매핑 테이블에 해당하는 파일인지 확인
+[ ] 3. 해당하면 기술표(docs/technical-reference.html) 먼저 업데이트
+[ ] 4. git add에 기술표 파일 포함
+[ ] 5. 코드와 기술표를 같은 커밋에 포함
+```
+
+**자가 점검 질문** (커밋 직전에 자문):
+- "기술표 업데이트 없이 커밋하려 하고 있나?"
+- "수정한 코드가 기술표에 문서화되어 있나?"
+- → **아니면 즉시 기술표 업데이트 후 커밋**
+
+**위반 시**:
+- 기술표 없이 코드만 커밋 = **규칙 위반**
+- 반드시 기술표 업데이트 커밋을 추가해야 함
+- 이 규칙은 v5.7 기술표 누락 사례에서 학습됨 (2026-02-05)
 
 ### Phase 4: AEGIS 검증 (완료 후 자동)
 ```
