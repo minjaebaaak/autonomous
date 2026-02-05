@@ -1,4 +1,4 @@
-# Autonomous Mode v2.3 - AEGIS + Ralph Loop + Technical Reference
+# Autonomous Mode v2.5 - AEGIS + Ralph Loop + Auto-Commit
 
 > **이제 `/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 
@@ -8,7 +8,9 @@
 
 | 기능 | 설명 | 상태 |
 |------|------|------|
-| **📚 기술표 참조** | 작업 전 기술표에서 파일/함수 확인 | ✅ 자동 (v2.3) |
+| **📚 기술표 참조** | 작업 전 기술표에서 파일/함수 확인 | ✅ 자동 |
+| **📝 기술표 업데이트** | 코드 변경 후 기술표 자동 업데이트 | ✅ 자동 |
+| **🔄 autonomous 자동 커밋** | autonomous.md 개선 시 자동 git 반영 | ✅ 자동 (v2.5) |
 | **AEGIS Protocol** | 7-Layer 검증 프레임워크 | ✅ 자동 |
 | **ultrathink** | 심층 분석 모드 | ✅ 자동 |
 | **Sequential Thinking** | 복잡한 문제 시 단계별 사고 | ✅ 필요 시 |
@@ -61,6 +63,60 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 - 파일 간 의존성을 놓치면 회귀(regression) 발생
 - 동일 기능이 여러 파일에 분산되어 있음
 - 기술표로 전체 그림을 파악해야 누락 방지
+
+### Phase 1.6: 📝 기술표 업데이트 의무
+
+> **🔴 코드 변경 후 관련 기술표 섹션 자동 업데이트 - 사용자 요청 불필요**
+
+**업데이트 매핑**:
+| 수정 영역 | 업데이트 섹션 |
+|----------|-------------|
+| collectors/, serp_collector_service.py | A. SERP 수집 |
+| auto_login_service.py, naver_*.py | B. 로그인/세션 |
+| ownership_*, brand_checker.py | C. 소유권 감지 |
+| enhanced_content_scraper.py, *_llm_*.py | D. 콘텐츠 분석 |
+| scheduler_service.py, monitoring_*.py | E. 모니터링 |
+| competitor_*.py | F. 경쟁사 분석 |
+| frontend/ 페이지 컴포넌트 | G. 프론트엔드 |
+
+**필수 업데이트 워크플로우**:
+```
+1. 코드 수정 완료
+2. 빌드 검증 통과
+3. 🔴 기술표 업데이트 (자동 - 사용자 요청 불필요)
+4. 커밋 & 푸시
+5. 프로덕션 배포
+```
+
+**절대 금지**:
+```
+❌ 코드 수정 후 기술표 업데이트 없이 커밋
+❌ "기술표 업데이트 할까요?" 질문
+❌ 사용자가 "기술표 업데이트해" 말할 때까지 대기
+```
+
+### Phase 1.7: 🔄 autonomous.md 자동 커밋 (v2.5 신규)
+
+> **🔴 autonomous.md 개선 시 자동으로 git 커밋 & 푸시 - 사용자 요청 불필요**
+
+**적용 시점**: autonomous.md에 변경 발생 시 (규칙 추가/개선, 버전 업데이트)
+
+**필수 워크플로우**:
+```
+1. autonomous.md 수정
+2. 버전 번호 증가 (예: v2.5 → v2.6)
+3. 🔴 자동 커밋 & 푸시
+   - git add .claude/commands/autonomous.md CLAUDE.md
+   - git commit -m "docs: autonomous.md vX.X - [변경 요약]"
+   - git push origin main
+```
+
+**절대 금지**:
+```
+❌ autonomous.md 수정 후 커밋하지 않음
+❌ "커밋할까요?" 질문
+❌ 사용자가 "커밋해" 말할 때까지 대기
+```
 
 ---
 
