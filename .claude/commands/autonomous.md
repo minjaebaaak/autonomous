@@ -1,4 +1,4 @@
-# Autonomous Mode v2.6 - AEGIS + Ralph Loop + Auto-Commit + 문서 동기화
+# Autonomous Mode v2.7 - AEGIS + Ralph Loop + Auto-Commit + 문서 동기화 + 타임존 규칙
 
 > **이제 `/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 
@@ -52,11 +52,22 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 
 > **🔴 모든 작업 전 기술표를 먼저 확인하여 관련 파일과 함수를 파악할 것**
 
-**기술표 위치**: `docs/technical-reference.html` (프로젝트별 설정)
+**기술표 위치**: `docs/technical-reference.html`
 
 **참조 방법**:
 1. 기술표 HTML 파일 읽기: `Read docs/technical-reference.html`
-2. 작업과 관련된 섹션 확인
+2. 작업과 관련된 섹션 확인:
+
+| 작업 유형 | 참조 섹션 |
+|----------|---------|
+| 파워링크/브랜드 콘텐츠/VIEW/뉴스 | **A. SERP 수집** |
+| 네이버 로그인/세션/쿠키 | **B. 로그인/세션** |
+| 자사 콘텐츠 표시/소유권 | **C. 소유권 감지** |
+| 스크래핑/OCR/LLM 분석 | **D. 콘텐츠 분석** |
+| 스케줄러/알림/배치 | **E. 모니터링** |
+| 경쟁사 기능 | **F. 경쟁사 분석** |
+| UI 페이지/버그 | **G. 프론트엔드** |
+| 전체 구조 이해 | **H. 아키텍처** |
 
 **필수 확인 체크리스트**:
 ```
@@ -75,6 +86,17 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 ### Phase 1.6: 📝 기술표 업데이트 의무
 
 > **🔴 코드 변경 후 관련 기술표 섹션 자동 업데이트 - 사용자 요청 불필요**
+
+**업데이트 매핑**:
+| 수정 영역 | 업데이트 섹션 |
+|----------|-------------|
+| collectors/, serp_collector_service.py | A. SERP 수집 |
+| auto_login_service.py, naver_*.py | B. 로그인/세션 |
+| ownership_*, brand_checker.py | C. 소유권 감지 |
+| enhanced_content_scraper.py, *_llm_*.py | D. 콘텐츠 분석 |
+| scheduler_service.py, monitoring_*.py | E. 모니터링 |
+| competitor_*.py | F. 경쟁사 분석 |
+| frontend/ 페이지 컴포넌트 | G. 프론트엔드 |
 
 **필수 업데이트 워크플로우**:
 ```
