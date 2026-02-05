@@ -12,6 +12,34 @@
 - 오류 발생 시 자체 해결 시도 (최대 3회)
 - TodoWrite로 진행 상황 추적
 
+---
+
+## autonomous.md 관리 규칙 🔴 필수
+
+> **autonomous.md는 전역 경로를 기준으로 관리**
+
+**핵심 원칙**:
+- 🔴 **전역 경로가 기준**: `~/.claude/commands/autonomous.md`
+- 프로젝트 `.claude/commands/autonomous.md`는 Claude가 인식하지 못함
+- 모든 수정은 전역 경로에서 직접 수행
+
+**필수 워크플로우**:
+```bash
+# 1. 전역 파일 직접 수정
+vim ~/.claude/commands/autonomous.md
+
+# 2. autonomous 레포에 동기화 + 커밋 + 푸시
+cp ~/.claude/commands/autonomous.md ~/Desktop/Develop/project/autonomous_temp/.claude/commands/
+cd ~/Desktop/Develop/project/autonomous_temp
+git add . && git commit -m "docs: autonomous.md vX.X" && git push origin master
+```
+
+**위반 패턴**:
+```
+❌ 프로젝트 로컬 .claude/commands/autonomous.md만 수정
+❌ 전역에 반영 안 함
+```
+
 ## 계획 파일 관리
 
 > **완료된 계획은 아카이브하고, 새 작업은 새 계획 파일로 시작**
