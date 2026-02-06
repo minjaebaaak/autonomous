@@ -40,24 +40,27 @@
 vim ~/.claude/commands/autonomous.md
 
 # 2. autonomous 레포에 동기화 + 커밋 + 푸시
-cp ~/.claude/commands/autonomous.md ~/Desktop/Develop/project/autonomous_temp/.claude/commands/
-cd ~/Desktop/Develop/project/autonomous_temp
-# README.md 업데이트 (버전, 변경사항)
+cp ~/.claude/commands/autonomous.md [autonomous-레포-경로]/.claude/commands/
+cd [autonomous-레포-경로]
+# README.md 업데이트 (버전 히스토리 테이블에 새 행 추가)
 git add . && git commit -m "docs: autonomous.md vX.X - [변경 요약]" && git push origin master
 ```
+> `[autonomous-레포-경로]`는 autonomous 레포를 clone한 위치 (예: `~/Projects/autonomous`)
 
 **2. 프로젝트 교훈 → 범용화 시:**
 ```bash
-# 1. 프로젝트 CLAUDE.md Phase 확장에 기록
-# 2. 범용화 가능하면 → autonomous.md에 추상화 반영
-# 3. autonomous_temp/projects/[프로젝트]/에 원본 백업
+# 1. 프로젝트 CLAUDE.md Phase 확장에 교훈 기록
+# 2. 범용화 판단: "이 교훈은 다른 프로젝트에서도 적용 가능한가?"
+#    → 가능하면: 프로젝트 특화 용어를 제거하고 원칙만 추출
+#    → 추출한 원칙을 범용 autonomous.md에 추가
+# 3. [autonomous-레포-경로]/projects/[프로젝트]/에 원본 백업
 # 4. autonomous 레포 커밋 & 푸시
 ```
 
 **3. CLAUDE.md Phase 확장 수정 시:**
 ```bash
 # 1. 프로젝트 CLAUDE.md Phase 확장 수정
-# 2. autonomous_temp/projects/[프로젝트]/CLAUDE-ext.md에 동기화
+# 2. [autonomous-레포-경로]/projects/[프로젝트]/CLAUDE-ext.md에 동기화
 # 3. autonomous 레포 커밋 & 푸시
 ```
 

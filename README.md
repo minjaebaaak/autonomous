@@ -74,6 +74,10 @@ curl -o ~/.claude/commands/autonomous.md \
 
 ### 프로젝트 Phase 확장 설정
 
+> **주의**: 프로젝트 `.claude/commands/autonomous.md`를 생성하지 마세요.
+> 프로젝트 로컬 파일이 전역 범용 autonomous.md를 오버라이드합니다.
+> 프로젝트 특화 설정은 반드시 CLAUDE.md "Phase 확장" 섹션에만 추가하세요.
+
 전역 설치 후, 각 프로젝트 CLAUDE.md 하단에 Phase 확장 섹션을 추가하세요:
 
 ```markdown
@@ -155,8 +159,10 @@ curl -o ~/.claude/commands/autonomous.md \
 | **Phase 4** | AEGIS 검증 | 7-Layer 검증 프레임워크 |
 | **Phase 5** | 자율 실행 | 사용자 의도 확인, 모호성 즉시 확인 |
 | **Phase 5.5** | 에이전트 검증 | 에이전트 결과 원본 대조 |
-| **Phase 6** | 랄프 루프 | 목표 달성까지 반복 |
-| **Phase 7** | 마무리 | 빌드 검증, 배포, 프로덕션 확인 |
+| **Phase 6** | 커밋 전 문서 확인 | 문서 업데이트 없이 커밋 금지 |
+| **Phase 7** | AEGIS 검증 | 빌드 검증, 배포, 프로덕션 확인 |
+| **Phase 8** | 피드백 루프 | 검증 실패 시 자동 수정 (최대 3회) |
+| **Phase 9** | 랄프 루프 | 목표 달성까지 무한 반복 (최대 10회) |
 
 ---
 
