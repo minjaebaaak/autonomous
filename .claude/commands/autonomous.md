@@ -154,8 +154,8 @@ autonomous 레포/
 **규칙**:
 ```
 1. 범용 autonomous.md 수정 시:
-   - autonomous 레포의 .claude/commands/autonomous.md 수정
-   - ~/.claude/commands/autonomous.md에 복사
+   - ~/.claude/commands/autonomous.md 수정 (전역 = 실제 사용 파일)
+   - autonomous 레포에 복사 + README.md 업데이트
    - autonomous 레포에 커밋 & 푸시
    → 모든 프로젝트에 즉시 반영 (전역이므로)
 
