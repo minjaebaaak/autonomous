@@ -159,16 +159,18 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 **필수 워크플로우**:
 ```
 1. autonomous.md 수정
-2. 버전 번호 증가 (예: v2.7 → v2.8)
-3. 🔴 자동 커밋 & 푸시
-   - git add .claude/commands/autonomous.md CLAUDE.md
+2. 버전 번호 증가 (예: v2.8 → v2.9)
+3. 🔴 README.md 업데이트 (버전 번호, 변경사항, 히스토리 테이블)
+4. 🔴 자동 커밋 & 푸시
+   - git add .claude/commands/autonomous.md README.md
    - git commit -m "docs: autonomous.md vX.X - [변경 요약]"
-   - git push origin main
+   - git push origin master
 ```
 
 **절대 금지**:
 ```
 ❌ autonomous.md 수정 후 커밋하지 않음
+❌ README.md 업데이트 없이 autonomous.md만 커밋
 ❌ "커밋할까요?" 질문
 ❌ 사용자가 "커밋해" 말할 때까지 대기
 ```
