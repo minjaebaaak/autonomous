@@ -152,7 +152,7 @@ curl -o ~/.claude/commands/autonomous.md \
 | Phase | 이름 | 설명 |
 |-------|------|------|
 | **Phase 0** | 사전 점검 | 기술문서 읽기 + 섹션 매핑 (CLAUDE.md Phase 확장 참조) |
-| **Phase 1** | 초기화 | 상태 파일 생성, TodoWrite 설정 |
+| **Phase 1** | 초기화 | 상태 파일 생성 |
 | **Phase 2** | 문서 업데이트 | 코드 변경 후 기술문서 업데이트 (CLAUDE.md 매핑 참조) |
 | **Phase 3** | autonomous 동기화 | autonomous.md 변경 시 전역 + 레포 동기화 |
 | **Phase 3.5** | 양방향 동기화 | 프로젝트 교훈 범용화, CLAUDE.md Phase 확장 백업 |
