@@ -56,4 +56,7 @@ ssh arklink@39.121.73.114 "cd /home/arklink/Develop/project/sharemanager/fronten
 
 # 백엔드 배포
 ssh arklink@39.121.73.114 "cd /home/arklink/Develop/project/sharemanager/backend && git pull origin main && pm2 restart sharemanager-backend"
+
+# 검증
+ssh arklink@39.121.73.114 "pm2 status && curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:14567/ && curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:14566/api/v1/keywords/"
 ```
