@@ -14,16 +14,27 @@
 
 ---
 
-## autonomous.md 관리 규칙 🔴 필수
+## autonomous.md 관리 규칙 🔴 필수 (v3.0)
 
-> **autonomous.md는 전역 경로를 기준으로 관리**
+> **autonomous.md = 범용 1개만. 프로젝트 특화 = CLAUDE.md Phase 확장.**
 
-**핵심 원칙**:
-- 🔴 **전역 경로가 기준**: `~/.claude/commands/autonomous.md`
-- 프로젝트 `.claude/commands/autonomous.md`는 Claude가 인식하지 못함
-- 모든 수정은 전역 경로에서 직접 수행
+### 핵심 원칙
+- 🔴 **전역 = 범용**: `~/.claude/commands/autonomous.md` (프로젝트 무관)
+- 🔴 **프로젝트 특화는 CLAUDE.md에**: 각 프로젝트 CLAUDE.md 하단에 "Phase 확장" 섹션
+- 🔴 **프로젝트 로컬 autonomous.md 금지**: `.claude/commands/autonomous.md`는 전역을 오버라이드하므로 삭제
 
-**필수 워크플로우**:
+### 파일 위치
+
+| 위치 | 경로 | 역할 |
+|------|------|------|
+| **전역 (기준)** | `~/.claude/commands/autonomous.md` | Claude가 실제로 읽는 범용 파일 |
+| **autonomous 레포** | `autonomous_temp/.claude/commands/` | 버전 관리 + 배포용 |
+| **프로젝트 CLAUDE.md** | `[project]/CLAUDE.md` 하단 "Phase 확장" | 프로젝트별 기술문서/매핑/배포 설정 |
+| **프로젝트 로컬** | `.claude/commands/autonomous.md` | ❌ **사용 금지** (전역 오버라이드) |
+
+### 양방향 동기화 워크플로우
+
+**1. 범용 autonomous.md 수정 시:**
 ```bash
 # 1. 전역 파일 직접 수정
 vim ~/.claude/commands/autonomous.md
@@ -31,14 +42,34 @@ vim ~/.claude/commands/autonomous.md
 # 2. autonomous 레포에 동기화 + 커밋 + 푸시
 cp ~/.claude/commands/autonomous.md ~/Desktop/Develop/project/autonomous_temp/.claude/commands/
 cd ~/Desktop/Develop/project/autonomous_temp
-git add . && git commit -m "docs: autonomous.md vX.X" && git push origin master
+# README.md 업데이트 (버전, 변경사항)
+git add . && git commit -m "docs: autonomous.md vX.X - [변경 요약]" && git push origin master
 ```
 
-**위반 패턴**:
+**2. 프로젝트 교훈 → 범용화 시:**
+```bash
+# 1. 프로젝트 CLAUDE.md Phase 확장에 기록
+# 2. 범용화 가능하면 → autonomous.md에 추상화 반영
+# 3. autonomous_temp/projects/[프로젝트]/에 원본 백업
+# 4. autonomous 레포 커밋 & 푸시
 ```
-❌ 프로젝트 로컬 .claude/commands/autonomous.md만 수정
-❌ 전역에 반영 안 함
+
+**3. CLAUDE.md Phase 확장 수정 시:**
+```bash
+# 1. 프로젝트 CLAUDE.md Phase 확장 수정
+# 2. autonomous_temp/projects/[프로젝트]/CLAUDE-ext.md에 동기화
+# 3. autonomous 레포 커밋 & 푸시
 ```
+
+### 위반 패턴
+```
+❌ 프로젝트 로컬 .claude/commands/autonomous.md 생성/수정
+❌ 전역에 반영 안 하고 autonomous 레포에만 수정
+❌ README.md 업데이트 없이 autonomous.md만 커밋
+❌ 프로젝트 교훈을 범용화하지 않고 방치
+```
+
+---
 
 ## 계획 파일 관리
 
@@ -69,6 +100,41 @@ git add . && git commit -m "docs: autonomous.md vX.X" && git push origin master
 - 완료된 계획 내용을 새 계획에 복사 금지 (혼란 방지)
 - 필요 시 아카이브에서 참조만 할 것
 - 계획 파일 50KB 초과 시 정리 필요 신호
+
+---
+
+## Phase 확장 작성 가이드
+
+> 새 프로젝트에 autonomous를 적용할 때, CLAUDE.md에 아래 섹션을 추가하세요.
+
+```markdown
+## /autonomous Phase 확장 설정
+
+### Phase 0 확장: 기술문서
+| 문서 | 경로 | 용도 |
+|------|------|------|
+| **[문서명]** | `[경로]` | [용도] |
+
+### Phase 0 확장: 섹션 매핑
+| 작업 유형 | 참조 섹션 |
+|----------|---------|
+| [작업 유형] | [섹션명] |
+
+### Phase 2 확장: 파일→문서 매핑
+| 수정 영역 | 업데이트 섹션 |
+|----------|-------------|
+| [파일/디렉토리 패턴] | [문서 섹션] |
+
+### Phase 7 확장: 검증 명령어
+\```bash
+# 프로젝트별 빌드/테스트 명령어
+\```
+
+### Phase 7 확장: 배포 명령어
+\```bash
+# 프로젝트별 배포 명령어
+\```
+```
 
 ---
 
@@ -103,13 +169,6 @@ local_dt = utc_to_local(obj.created_at) if obj.created_at else None
 ```bash
 # API 응답에 타임존 오프셋 포함 여부 확인
 curl http://localhost:[PORT]/api/[endpoint] | grep -o 'T[0-9:]*[+-][0-9:]*'
-```
-
-**코드 리뷰 체크리스트**:
-```
-[ ] 새 API 엔드포인트에 datetime 필드가 있는가?
-[ ] .isoformat() 단독 사용하고 있는가? → 타임존 변환 적용
-[ ] API 응답에 타임존 오프셋 포함되는가?
 ```
 
 ---

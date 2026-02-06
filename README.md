@@ -1,8 +1,27 @@
-# /autonomous v2.9
+# /autonomous v3.0
 
-> **Claude Code를 위한 자율 실행 모드 - AEGIS + Ralph Loop + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 완전 통합**
+> **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
+>
+> AEGIS + Ralph Loop + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화
 
 `/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.
+
+---
+
+## v3.0: 범용화
+
+v3.0에서 프로젝트 특화 내용을 모두 분리했습니다:
+
+| 구분 | 위치 | 역할 |
+|------|------|------|
+| **범용 autonomous.md** | `~/.claude/commands/` (전역) | 지혜의 집약체 — 모든 프로젝트에 적용 |
+| **프로젝트 Phase 확장** | 각 프로젝트 `CLAUDE.md` 하단 | 기술문서 경로, 섹션 매핑, 배포 명령어 |
+| **프로젝트 아카이브** | `projects/[프로젝트명]/` | 교훈 원본, Phase 확장 백업, 설명 |
+
+**핵심 설계**:
+- autonomous.md = 범용 1개만 (전역 = 레포)
+- 프로젝트별 autonomous.md 생성 금지 (전역 오버라이드 문제)
+- CLAUDE.md는 항상 로드됨 → Phase 확장이 자동으로 합쳐짐
 
 ---
 
@@ -10,50 +29,38 @@
 
 | 기능 | 설명 | 상태 |
 |------|------|------|
-| **🛑 Phase 0 강제** | 작업 전 기술표 확인 필수 (건너뛰기 불가) | ✅ 자동 (v2.8) |
-| **🔍 에이전트 결과 검증** | 서브에이전트 보고값 원본 대조 필수 | ✅ 자동 (v2.9) |
-| **📚 기술표 참조** | 작업 전 기술표에서 파일/함수 확인 | ✅ 자동 |
-| **📝 기술표 업데이트** | 코드 변경 후 기술표 자동 업데이트 | ✅ 자동 |
-| **🔄 autonomous 자동 커밋** | autonomous.md 개선 시 자동 git 반영 | ✅ 자동 (v2.5) |
-| **📋 커밋 전 문서 확인** | 기술표 업데이트 강제 확인 | ✅ 자동 (v2.6) |
+| **Phase 0 강제** | 작업 전 기술문서 확인 필수 | ✅ 자동 (v2.8) |
+| **에이전트 결과 검증** | 서브에이전트 보고값 원본 대조 필수 | ✅ 자동 (v2.9) |
+| **기술문서 참조** | CLAUDE.md Phase 확장에서 경로 확인 | ✅ 자동 |
+| **문서 업데이트** | 코드 변경 후 기술문서 자동 업데이트 | ✅ 자동 |
+| **양방향 동기화** | 프로젝트 교훈 → 범용화 | ✅ 자동 (v3.0) |
+| **autonomous 자동 커밋** | autonomous.md 개선 시 자동 git 반영 | ✅ 자동 (v2.5) |
+| **커밋 전 문서 확인** | 문서 업데이트 강제 확인 | ✅ 자동 (v2.6) |
 | **AEGIS Protocol** | 7-Layer 검증 프레임워크 | ✅ 자동 |
 | **ultrathink** | 심층 분석 모드 | ✅ 자동 |
 | **Sequential Thinking** | 복잡한 문제 시 단계별 사고 | ✅ 필요 시 |
 | **TodoWrite** | 진행 추적 | ✅ 자동 |
 | **피드백 루프** | 완료 후 자동 검증 (3회) | ✅ 자동 |
-| **🔄 랄프 루프** | 목표 달성까지 무한 반복 (최대 10회) | ✅ 자동 |
+| **랄프 루프** | 목표 달성까지 무한 반복 (최대 10회) | ✅ 자동 |
 
 ---
 
 ## 설치
 
-### 기본 설치 (autonomous.md만)
+### 전역 설치 (권장)
 
 ```bash
-# 프로젝트별 설치
-mkdir -p .claude/commands
-curl -o .claude/commands/autonomous.md \
-  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
-
-# 전역 설치 (모든 프로젝트에서 사용)
+# autonomous.md 전역 설치
 mkdir -p ~/.claude/commands
 curl -o ~/.claude/commands/autonomous.md \
   https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
 ```
 
-### 전체 설치 (CLAUDE.md 포함 - 권장)
+### CLAUDE.md 포함 설치
 
 한국어 응답 및 기본 행동 규칙을 포함한 CLAUDE.md도 함께 설치합니다:
 
 ```bash
-# 프로젝트별 설치 (권장)
-mkdir -p .claude/commands
-curl -o .claude/CLAUDE.md \
-  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
-curl -o .claude/commands/autonomous.md \
-  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
-
-# 전역 설치
 mkdir -p ~/.claude/commands
 curl -o ~/.claude/CLAUDE.md \
   https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
@@ -62,8 +69,36 @@ curl -o ~/.claude/commands/autonomous.md \
 ```
 
 > **CLAUDE.md vs autonomous.md**
-> - `CLAUDE.md`: 프로젝트 규칙 (언어, 행동 방식)
+> - `CLAUDE.md`: 프로젝트 규칙 (언어, 행동 방식, Phase 확장 가이드)
 > - `autonomous.md`: 실행 모드 커맨드 (어떻게 작업할지)
+
+### 프로젝트 Phase 확장 설정
+
+전역 설치 후, 각 프로젝트 CLAUDE.md 하단에 Phase 확장 섹션을 추가하세요:
+
+```markdown
+## /autonomous Phase 확장 설정
+
+### Phase 0 확장: 기술문서
+| 문서 | 경로 | 용도 |
+|------|------|------|
+| **기술표** | `docs/technical-reference.html` | 파일/함수/의존성 참조 |
+
+### Phase 0 확장: 섹션 매핑
+| 작업 유형 | 참조 섹션 |
+|----------|---------|
+| UI 페이지 | 프론트엔드 |
+| API 작업 | 백엔드 |
+
+### Phase 2 확장: 파일→문서 매핑
+| 수정 영역 | 업데이트 섹션 |
+|----------|-------------|
+| frontend/ | 프론트엔드 |
+| backend/api/ | API 문서 |
+
+### Phase 7 확장: 검증/배포 명령어
+# (프로젝트별 빌드/테스트/배포 명령어)
+```
 
 ---
 
@@ -77,44 +112,51 @@ curl -o ~/.claude/commands/autonomous.md \
 
 ---
 
-## Phase 0: 강제 사전 점검 (v2.8)
+## 양방향 동기화
 
-> 모든 작업의 시작점. 건너뛸 수 없음.
+### 범용 autonomous.md 수정 시
+```
+1. ~/.claude/commands/autonomous.md 수정
+2. autonomous_temp/.claude/commands/에 복사
+3. README.md 업데이트
+4. autonomous 레포 커밋 & 푸시
+→ 모든 프로젝트에 즉시 반영 (전역)
+```
 
-1. **기술표 읽기** - `docs/technical-reference.html` (또는 프로젝트의 기술 문서)
-2. **관련 섹션 식별** - 작업 유형에 맞는 파일/함수 매핑
-3. **Phase 0 완료 선언** - 기술표 확인 없이 코드 작업 시작 금지
+### 프로젝트 교훈 → 범용화
+```
+1. 프로젝트 CLAUDE.md Phase 확장에 기록
+2. 범용화 가능 → autonomous.md에 추상화 반영
+3. autonomous_temp/projects/[프로젝트]/에 원본 백업
+4. autonomous 레포 커밋 & 푸시
+```
 
-**왜 필요한가?**
-- 규칙만 있고 강제성이 없으면 무시됨
-- 기술표 미확인 → 관련 파일 누락 → 회귀(regression) 발생
-- Phase 0이 모든 작업의 진입점을 통제
+### 프로젝트 추가 방법
+```
+1. 전역 autonomous.md 설치 (이미 되어있으면 생략)
+2. 프로젝트 CLAUDE.md에 "Phase 확장" 섹션 추가
+3. (선택) autonomous_temp/projects/[프로젝트]/ 디렉토리 생성
+   - CLAUDE-ext.md: Phase 확장 백업
+   - autonomous-history.md: 교훈 아카이브
+   - README.md: 프로젝트 설명
+```
 
 ---
 
-## 문서 동기화 시스템 (v2.6)
+## Phase 구조
 
-### 핵심 개발 원칙
-
-1. **기술표 기반 개발**: 작업 전 기술표에서 관련 파일/함수 확인
-2. **기술표 동기화**: 코드 변경 시 기술표도 **반드시** 업데이트
-3. **커밋 전 확인**: 기술표 업데이트 없이 코드 커밋 **금지**
-4. **코드와 문서는 한 커밋에**: 코드만 커밋하고 문서는 나중에 = **규칙 위반**
-
-### 커밋 전 문서 확인 (강제)
-
-```
-커밋 전 체크리스트:
-[ ] 1. 수정한 파일 목록 확인 (git status)
-[ ] 2. 기술표 업데이트 필요한 파일인지 확인
-[ ] 3. 해당하면 기술표 먼저 업데이트
-[ ] 4. git add에 기술표 파일 포함
-[ ] 5. 코드와 기술표를 같은 커밋에 포함
-```
-
-**위반 시**:
-- 기술표 없이 코드만 커밋 = **규칙 위반**
-- 반드시 기술표 업데이트 커밋 추가
+| Phase | 이름 | 설명 |
+|-------|------|------|
+| **Phase 0** | 사전 점검 | 기술문서 읽기 + 섹션 매핑 (CLAUDE.md Phase 확장 참조) |
+| **Phase 1** | 초기화 | 상태 파일 생성, TodoWrite 설정 |
+| **Phase 2** | 문서 업데이트 | 코드 변경 후 기술문서 업데이트 (CLAUDE.md 매핑 참조) |
+| **Phase 3** | autonomous 동기화 | autonomous.md 변경 시 전역 + 레포 동기화 |
+| **Phase 3.5** | 양방향 동기화 | 프로젝트 교훈 범용화, CLAUDE.md Phase 확장 백업 |
+| **Phase 4** | AEGIS 검증 | 7-Layer 검증 프레임워크 |
+| **Phase 5** | 자율 실행 | 사용자 의도 확인, 모호성 즉시 확인 |
+| **Phase 5.5** | 에이전트 검증 | 에이전트 결과 원본 대조 |
+| **Phase 6** | 랄프 루프 | 목표 달성까지 반복 |
+| **Phase 7** | 마무리 | 빌드 검증, 배포, 프로덕션 확인 |
 
 ---
 
@@ -138,29 +180,12 @@ Claude will:
 5. Repeat until RALPH_DONE (RALPH_DONE 출력까지 반복)
 ```
 
-### 핵심 요소
-
 | 요소 | 설명 |
 |------|------|
 | **local.md** | 프롬프트/상태 기록으로 컨텍스트 유지 |
 | **Stop 훅 연동** | 종료 시도 차단 메커니즘 |
 | **RALPH_DONE** | 명시적 종료 조건 |
 | **표지판 추가** | 실패 시 새로운 검증 규칙/테스트 추가 |
-
-### 적용 시점
-
-- ✅ **추천**: 테스트 코드 실행, 린트 검사, Playwright 검증
-- ❌ **비추천**: A/B/C 선택 등 주관적 판단이 필요한 작업
-
-### 랄프 루프 vs 피드백 루프
-
-| 구분 | 피드백 루프 | 랄프 루프 |
-|------|------------|----------|
-| 최대 시도 | 3회 | 10회 |
-| 접근법 | 동일 방식 재시도 | **표지판 추가 후** 재시도 |
-| 상태 유지 | 메모리 내 | **local.md 파일** |
-| 종료 조건 | 성공 또는 3회 실패 | **RALPH_DONE 출력** |
-| Stop 훅 | 미사용 | **종료 시도 차단** |
 
 ---
 
@@ -172,14 +197,23 @@ touch ~/.claude/state/EMERGENCY_STOP
 
 ---
 
+## 프로젝트 디렉토리
+
+| 프로젝트 | 디렉토리 | 설명 |
+|---------|---------|------|
+| ShareManager | `projects/sharemanager/` | SERP 모니터링 서비스 — autonomous 탄생 프로젝트 |
+
+---
+
 ## 버전 히스토리
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| v2.9 | 2026-02-06 | Phase 5.5 에이전트 결과 검증 추가, Phase 5 자율실행 규칙 개선 (모호성 확인 의무) |
-| v2.8 | 2026-02-06 | Phase 0 강제 도입 (기술표 미확인 방지), 2026-02-05 교훈 반영 |
+| **v3.0** | **2026-02-06** | **범용화 완료**: 프로젝트 특화 분리, Phase 확장 체계, 양방향 동기화 |
+| v2.9 | 2026-02-06 | Phase 5.5 에이전트 결과 검증 추가, Phase 5 자율실행 규칙 개선 |
+| v2.8 | 2026-02-06 | Phase 0 강제 도입 (기술표 미확인 방지) |
 | v2.7 | 2026-02-05 | CLAUDE.md 타임존 규칙, autonomous 전역 관리 규칙 추가 |
-| v2.6 | 2026-02-05 | 문서 동기화 시스템 (기술표/상태페이지 SSOT), Phase 3.5 커밋 전 문서 확인 강제 |
+| v2.6 | 2026-02-05 | 문서 동기화 시스템, Phase 3.5 커밋 전 문서 확인 강제 |
 | v2.5 | 2026-02-04 | autonomous.md 자동 커밋 & 푸시 |
 | v2.2 | 2026-01-19 | 랄프 루프 완전 통합 (놀이터 철학, local.md, Stop 훅) |
 | v2.1 | 2026-01-19 | 랄프 루프 기본 추가 |
