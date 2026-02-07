@@ -1,20 +1,21 @@
-# /autonomous v3.1
+# /autonomous v3.2
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
-> AEGIS + Ralph Loop + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화 + Agent Teams
+> AEGIS + Ralph Loop + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화 + Agent Teams 필수 판단
 
 `/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.
 
 ---
 
-## v3.1: Agent Teams 통합
+## v3.2: Agent Teams 필수 판단 강화
 
-v3.1에서 Agent Teams 조건부 판단 Phase 4.5를 추가했습니다:
+v3.2에서 Phase 4.5를 조건부 → **강제**로 강화했습니다:
 
-- **Phase 4.5**: 3개+ 독립 파일 동시 수정 시 Agent Teams 사용 검토
-- CLAUDE.md 규칙 #8-B(적합/부적합 시나리오) + #31(스폰 체크리스트) 참조
-- SSOT 파일 보호, delegate mode 권장, 3-Phase 도입 로드맵
+- **Phase 4.5**: 매 작업마다 팀원 필요 여부 **필수 판단 + 결과 출력**
+- "📋 팀원 판단" 블록 출력 없이 Phase 5 진행 = 규칙 위반
+- 판단 기준 테이블: 단독 진행 vs 팀원 구성 명확화
+- Phase 0과 동일한 강제 메커니즘 적용
 
 ## v3.0: 범용화
 
@@ -40,7 +41,7 @@ v3.0에서 프로젝트 특화 내용을 모두 분리했습니다:
 | **Phase 0 강제** | 작업 전 기술문서 확인 필수 (건너뛰기 불가) | ✅ 자동 (v2.8) |
 | **에이전트 결과 검증** | 서브에이전트 보고값 원본 대조 필수 | ✅ 자동 (v2.9) |
 | **양방향 동기화** | 프로젝트 교훈 → 범용화 | ✅ 자동 (v3.0) |
-| **Agent Teams 판단** | 3개+ 독립 파일 시 조건부 Agent Teams | ✅ 조건부 (v3.1) |
+| **Agent Teams 필수 판단** | 매 작업마다 팀원 필요 여부 판단 + 출력 의무 | ✅ 강제 (v3.2) |
 | **기술문서 참조** | 작업 전 프로젝트 기술문서에서 파일/함수 확인 | ✅ 자동 |
 | **문서 업데이트** | 코드 변경 후 관련 문서 자동 업데이트 | ✅ 자동 |
 | **autonomous 자동 커밋** | autonomous.md 개선 시 자동 git 반영 | ✅ 자동 (v2.5) |
@@ -166,7 +167,7 @@ curl -o ~/.claude/commands/autonomous.md \
 | **Phase 3** | autonomous 동기화 | autonomous.md 변경 시 전역 + 레포 동기화 |
 | **Phase 3.5** | 양방향 동기화 | 프로젝트 교훈 범용화, CLAUDE.md Phase 확장 백업 |
 | **Phase 4** | AEGIS 인지 레이어 | ultrathink, Sequential Thinking, TodoWrite |
-| **Phase 4.5** | Agent Teams 판단 | 조건 충족 시 Agent Teams 생성 (CLAUDE.md #8-B, #31 참조) |
+| **Phase 4.5** | Agent Teams 필수 판단 | 매 작업마다 팀원 필요 여부 판단 + 출력 의무 (CLAUDE.md #8-B, #31 참조) |
 | **Phase 5** | 자율 실행 | 사용자 의도 확인, 모호성 즉시 확인 |
 | **Phase 5.5** | 에이전트 검증 | 에이전트 결과 원본 대조 |
 | **Phase 6** | 커밋 전 문서 확인 | 문서 업데이트 없이 커밋 금지 |
@@ -225,7 +226,8 @@ touch ~/.claude/state/EMERGENCY_STOP
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v3.1** | **2026-02-07** | **Agent Teams 통합**: Phase 4.5 Agent Teams 조건부 판단 추가, SSOT 파일 보호 규칙 |
+| **v3.2** | **2026-02-07** | **Agent Teams 필수 판단**: Phase 4.5 조건부→강제, 매 작업마다 "📋 팀원 판단" 출력 의무화 |
+| v3.1 | 2026-02-07 | Agent Teams 통합: Phase 4.5 Agent Teams 조건부 판단 추가, SSOT 파일 보호 규칙 |
 | v3.0 | 2026-02-06 | 범용화 완료: 프로젝트 특화 분리, Phase 확장 체계, 양방향 동기화 |
 | v2.9 | 2026-02-06 | Phase 5.5 에이전트 결과 검증 추가, Phase 5 자율실행 규칙 개선 |
 | v2.8 | 2026-02-06 | Phase 0 강제 도입 (기술표 미확인 방지) |
