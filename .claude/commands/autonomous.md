@@ -1,8 +1,8 @@
-# Autonomous Mode v3.0 - 범용 프레임워크
+# Autonomous Mode v3.1 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v3.0: 범용화 완료. 프로젝트 특화 설정은 각 프로젝트 CLAUDE.md의 "Phase 확장" 섹션에서 관리.
+> v3.1: Agent Teams Phase 4.5 추가. 프로젝트 특화 설정은 각 프로젝트 CLAUDE.md의 "Phase 확장" 섹션에서 관리.
 
 ---
 
@@ -72,6 +72,7 @@ CLAUDE.md의 "Phase 0 확장: 기술문서" 섹션에서 경로 확인 후 읽�
 | **🛑 Phase 0 강제** | 작업 전 기술문서 확인 필수 (건너뛰기 불가) | ✅ 자동 (v2.8) |
 | **🔍 에이전트 결과 검증** | 서브에이전트 보고값 원본 대조 필수 | ✅ 자동 (v2.9) |
 | **🔄 양방향 동기화** | 프로젝트 교훈 → 범용화 | ✅ 자동 (v3.0) |
+| **👥 Agent Teams 판단** | 3개+ 독립 파일 시 조건부 Agent Teams | ✅ 조건부 (v3.1) |
 | **📚 기술문서 참조** | 작업 전 프로젝트 기술문서에서 파일/함수 확인 | ✅ 자동 |
 | **📝 문서 업데이트** | 코드 변경 후 관련 문서 자동 업데이트 | ✅ 자동 |
 | **🔄 autonomous 자동 커밋** | autonomous.md 개선 시 자동 git 반영 | ✅ 자동 (v2.5) |
@@ -183,6 +184,24 @@ autonomous 레포/
 - ultrathink 모드로 문제 심층 분석
 - 복잡한 문제는 Sequential Thinking MCP 사용
 - TodoWrite로 작업 계획 수립
+
+### Phase 4.5: Agent Teams 판단 (조건부)
+
+> **3개+ 독립 파일/모듈 동시 수정 시 Agent Teams 사용을 검토**
+
+```
+IF 3개+ 독립 파일/모듈 동시 수정 필요
+AND SSOT 파일 수정 불필요 (또는 1명만)
+AND 파일 소유권 겹침 없음:
+  → CLAUDE.md 규칙 #31 체크리스트 실행
+  → Agent Teams 생성 (delegate mode)
+  → 모든 완료 후 리더가 기술표 + 배포
+
+ELSE:
+  → 단일 세션 (Phase 5로 진행)
+```
+
+**SSOT 파일 목록은 CLAUDE.md 규칙 #8-B 참조.**
 
 ### Phase 5: 자율 실행 규칙
 - 기술적 판단은 자율 진행 (라이브러리 선택, 코드 구조 등)
