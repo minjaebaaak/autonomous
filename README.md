@@ -33,7 +33,9 @@ v3.0에서 프로젝트 특화 내용을 모두 분리했습니다:
 | **프로젝트 아카이브** | `projects/[프로젝트명]/` | 교훈 원본, Phase 확장 백업, 설명 |
 
 **핵심 설계**:
-- autonomous.md = 범용 1개만 (전역 = 레포)
+- 전역 `~/.claude/commands/autonomous.md` = 유일한 원본 (Single Source of Truth)
+- 레포 = 전역의 복사본. 직접 수정 절대 금지
+- 방향: 전역 → 레포 단방향만 허용
 - 프로젝트별 autonomous.md 생성 금지 (전역 오버라이드 문제)
 - CLAUDE.md는 항상 로드됨 → Phase 확장이 자동으로 합쳐짐
 
@@ -132,7 +134,10 @@ curl -o ~/.claude/commands/autonomous.md \
 
 ---
 
-## 양방향 동기화
+## 동기화 규칙 (전역 → 레포 단방향)
+
+> **전역 파일(`~/.claude/commands/autonomous.md`)이 유일한 원본.**
+> **레포의 autonomous.md를 직접 수정하면 전역과 불일치 발생 → 버전 혼동.**
 
 ### 범용 autonomous.md 수정 시
 ```
