@@ -132,11 +132,20 @@ mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 4. 🔴 자동 커밋 & 푸시
 ```
 
+**🔴 전역 = 유일한 SSOT (v3.6 교훈)**:
+```
+- 수정: 반드시 전역(`~/.claude/commands/autonomous.md`)에서만
+- 레포: 전역 복사본일 뿐. 직접 수정 절대 금지
+- 방향: 전역 → 레포 단방향만 허용
+```
+
 **절대 금지**:
 ```
 ❌ autonomous.md 수정 후 커밋하지 않음
 ❌ README.md 업데이트 없이 autonomous.md만 커밋
 ❌ "커밋할까요?" 질문
+❌ autonomous 레포에서 직접 autonomous.md 수정 (전역 우회)
+❌ 레포에서 버전 올리고 전역에 미반영
 ```
 
 ---
