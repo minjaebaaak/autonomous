@@ -2,6 +2,7 @@
 
 > ShareManager 프로젝트의 CLAUDE.md에 포함된 Phase 확장 섹션의 백업/템플릿입니다.
 > 실제 운영본: `sharemanager/CLAUDE.md` 하단의 "/autonomous Phase 확장 설정" 섹션
+> 백업 날짜: 2026-02-15
 
 ---
 
