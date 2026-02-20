@@ -1,4 +1,4 @@
-# /autonomous v4.0
+# /autonomous v4.1
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -9,6 +9,15 @@
 ---
 
 ## 최신 변경사항
+
+### v4.1: Phase 0 nlm query 강제 실행 (2026-02-20)
+
+- **Phase 0 Step 1**: 선언적 지시 → 절차적 Bash 명령으로 전환
+- `nlm notebook query` 실행을 구체적 코드 블록으로 명시
+- `Read 도구로 기술문서 직접 읽기 금지` 명시적 금지 추가
+- **배경**: v3.9~v4.0에서 nlm 인프라 구축했으나, 실제 세션에서 0회 실행됨
+  - 원인: 선언적 지시("nlm query로 질의")를 Claude가 Read 도구로 대체
+  - 해결: 절차적 Bash 명령 + PATH export + 예시로 강제
 
 ### v4.0: NotebookLM 자동 동기화 (2026-02-20)
 

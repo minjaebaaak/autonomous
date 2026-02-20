@@ -1,8 +1,8 @@
-# Autonomous Mode v4.0 - 범용 프레임워크
+# Autonomous Mode v4.1 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v4.0: 문서 업데이트 후 NotebookLM 자동 동기화 추가.
+> v4.1: Phase 0 nlm query 강제 실행 (선언적 → 절차적 전환).
 
 ---
 
@@ -15,12 +15,30 @@
 ### 🔴 실행 순서 (반드시 순서대로 - 건너뛰기 금지)
 
 **Step 1: 프로젝트 기술문서 참조** (필수 - 생략 금지)
+
+CLAUDE.md "Phase 확장 설정"에서 **Phase 0 NotebookLM** 항목을 찾는다:
+
+**A) NotebookLM 설정이 있으면 (노트북 ID가 명시됨):**
+```bash
+# 🔴 반드시 아래 Bash 명령을 실행할 것 (Read 도구로 기술문서 직접 읽기 금지)
+# <노트북ID>와 <질의>를 CLAUDE.md Phase 확장에서 가져온다.
+export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
+nlm notebook query "<노트북ID>" "<작업 관련 질의>"
+
+# 예시:
+# nlm notebook query "af7bfaf0-..." "SERP 수집 관련 파일과 함수는?"
+# nlm notebook query "af7bfaf0-..." "프론트엔드 대시보드 구조는?"
 ```
-CLAUDE.md "Phase 확장 설정"에서 기술문서 참조 방식 확인:
-  A) NotebookLM 설정 있으면 → nlm notebook query로 관련 섹션 질의 → grep 교차 검증
-  B) NotebookLM 설정 없으면 → 기술문서 직접 Read
-  C) nlm 실패 시 → fallback: 직접 Read
-```
+- 질의 결과에서 관련 파일/함수 목록을 추출한다
+- 필요 시 grep으로 교차 검증한다
+- **🔴 nlm 성공 시 Read 도구로 기술문서 전체를 읽지 않는다** (토큰 낭비)
+
+**B) NotebookLM 설정이 없으면:**
+- 기술문서를 Read 도구로 직접 읽는다
+
+**C) nlm 실패 시 (command not found, 인증 만료 등):**
+- fallback: 기술문서를 Read 도구로 직접 읽는다
+- 인증 만료: `nlm login` 실행 후 재시도 (1회)
 
 **Step 2: 관련 섹션 식별 및 출력** (필수)
 ```
@@ -87,7 +105,7 @@ CLAUDE.md "Phase 확장 설정"에서 기술문서 참조 방식 확인:
 | **피드백 루프** | 완료 후 자동 검증 (3회) | ✅ 자동 |
 | **🔄 랄프 루프** | 목표 달성까지 무한 반복 (최대 10회) | ✅ 자동 |
 | **🔄 작업 완료 자동 커밋** | 작업 완료 시 자동 git commit & push | ✅ 강제 (v3.6) |
-| **📓 NotebookLM 질의** | Phase 0에서 nlm query 우선 사용 (설정 있을 때) | ✅ 자동 (v3.9) |
+| **📓 NotebookLM 질의** | Phase 0에서 nlm query 강제 실행 (설정 있을 때) | ✅ 강제 (v4.1) |
 
 ---
 
