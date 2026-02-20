@@ -1,8 +1,8 @@
-# Autonomous Mode v3.8 - 범용 프레임워크
+# Autonomous Mode v4.0 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v3.8: 횡단 관심사 계층별 sweep Phase 5.9 추가 - "한 계층만 수정 ≠ 전수 조사".
+> v4.0: 문서 업데이트 후 NotebookLM 자동 동기화 추가.
 
 ---
 
@@ -14,10 +14,12 @@
 
 ### 🔴 실행 순서 (반드시 순서대로 - 건너뛰기 금지)
 
-**Step 1: 프로젝트 기술문서 읽기** (필수 - 생략 금지)
+**Step 1: 프로젝트 기술문서 참조** (필수 - 생략 금지)
 ```
-CLAUDE.md의 "Phase 0 확장: 기술문서" 섹션에서 경로 확인 후 읽기.
-해당 섹션이 없으면: docs/, README.md 등 프로젝트 문서를 탐색하여 읽기.
+CLAUDE.md "Phase 확장 설정"에서 기술문서 참조 방식 확인:
+  A) NotebookLM 설정 있으면 → nlm notebook query로 관련 섹션 질의 → grep 교차 검증
+  B) NotebookLM 설정 없으면 → 기술문서 직접 Read
+  C) nlm 실패 시 → fallback: 직접 Read
 ```
 
 **Step 2: 관련 섹션 식별 및 출력** (필수)
@@ -85,6 +87,7 @@ CLAUDE.md의 "Phase 0 확장: 기술문서" 섹션에서 경로 확인 후 읽�
 | **피드백 루프** | 완료 후 자동 검증 (3회) | ✅ 자동 |
 | **🔄 랄프 루프** | 목표 달성까지 무한 반복 (최대 10회) | ✅ 자동 |
 | **🔄 작업 완료 자동 커밋** | 작업 완료 시 자동 git commit & push | ✅ 강제 (v3.6) |
+| **📓 NotebookLM 질의** | Phase 0에서 nlm query 우선 사용 (설정 있을 때) | ✅ 자동 (v3.9) |
 
 ---
 
@@ -384,6 +387,9 @@ Grep으로 확인하면 방지 가능. (v5.41 핫픽스 #5: 14곳 보고 → 실
 3. git commit (의미 있는 메시지)
 4. git push
 5. 커밋 결과 출력
+6. 🔴 NotebookLM 동기화 (CLAUDE.md Phase 확장에 NotebookLM 설정 있을 때):
+   - 커밋에 포함된 문서 중 NotebookLM 소스 해당 파일 → nlm-sync.sh 실행
+   - nlm 실패 시 경고만 출력 (커밋 완료됨, 블로커 아님)
 ```
 
 **절대 금지**:
