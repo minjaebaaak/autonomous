@@ -1,8 +1,8 @@
-# Autonomous Mode v4.3 - 범용 프레임워크
+# Autonomous Mode v4.4 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v4.3: Phase 0 nlm 전 작업 강제 (기술표·규칙 문서 = NotebookLM 소스).
+> v4.4: nlm 인증 만료 시 재인증 강제 (fallback 전 nlm login 필수).
 
 ---
 
@@ -40,9 +40,21 @@ nlm notebook query "<노트북ID>" "<작업 관련 질의>"
 **B) NotebookLM 설정이 없으면:**
 - 기술문서를 Read 도구로 직접 읽는다
 
-**C) nlm 실패 시 (command not found, 인증 만료 등):**
+**C) nlm 실패 시 — 원인별 분기 (🔴 fallback 전 재인증 필수):**
+
+**C-1) 인증 만료 (Authentication expired):**
+1. 🔴 `nlm login` 실행 (필수 — 건너뛰기 금지)
+2. 재인증 성공 → nlm query 재시도
+3. 재인증 실패 → fallback: 기술문서를 Read 도구로 직접 읽는다
+
+**C-2) command not found / 기타 오류:**
 - fallback: 기술문서를 Read 도구로 직접 읽는다
-- 인증 만료: `nlm login` 실행 후 재시도 (1회)
+
+**절대 금지:**
+```
+❌ 인증 만료 시 `nlm login` 없이 바로 fallback
+❌ "nlm 실패 → 직접 비교 진행" (재인증 시도 없이)
+```
 
 **Step 2: 관련 섹션 식별 및 출력** (필수)
 ```
