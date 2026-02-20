@@ -1,8 +1,8 @@
-# Autonomous Mode v4.2 - 범용 프레임워크
+# Autonomous Mode v4.3 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v4.2: Phase 0 복잡도 기반 분기 (Simple → grep만 / Complex → nlm 강제).
+> v4.3: Phase 0 nlm 전 작업 강제 (기술표·규칙 문서 = NotebookLM 소스).
 
 ---
 
@@ -14,28 +14,11 @@
 
 ### 🔴 실행 순서 (반드시 순서대로 - 건너뛰기 금지)
 
-**Step 0: 작업 복잡도 판정** (필수 - 생략 금지)
+**Step 1: 기술문서 참조 (모든 작업 — nlm 강제)** (필수 - 생략 금지)
 
-작업을 아래 기준으로 분류한다:
-
-| 분류 | 기준 | Phase 0 경로 |
-|------|------|-------------|
-| **Simple** | 텍스트 교체, CSS/스타일링, 오타 수정, 단일 파일 내 수정 | → Step 1-S (간소화) |
-| **Complex** | 코드 로직 변경, 버그 수정, 새 기능, 아키텍처 관련, 다중 파일 수정 | → Step 1-C (nlm 강제) |
-
-🔴 필수 출력 (건너뛰기 금지):
-```
-📋 복잡도 판정: [Simple / Complex]
-  - 사유: [1줄]
-```
-
-**Step 1-S: Simple 작업 — grep으로 영향 범위 확인**
-
-- Grep으로 변경 대상 검색 (전체 codebase)
-- nlm query / 기술문서 Read **불필요** (토큰 절약)
-- 바로 Step 2로 진행
-
-**Step 1-C: Complex 작업 — 기술문서 참조 (필수)**
+> **🔴 근거**: NotebookLM에 CLAUDE.md, MEMORY.md, 기술표, 규칙화 문서가 모두 포함됨.
+> 기존 규칙(CLAUDE.md #14)에서 "모든 코드 작업 전 기술표 필수 확인"이므로,
+> **작업 규모와 무관하게** nlm 질의는 필수.
 
 CLAUDE.md "Phase 확장 설정"에서 **Phase 0 NotebookLM** 항목을 찾는다:
 
@@ -48,6 +31,7 @@ nlm notebook query "<노트북ID>" "<작업 관련 질의>"
 # 예시:
 # nlm notebook query "af7bfaf0-..." "SERP 수집 관련 파일과 함수는?"
 # nlm notebook query "af7bfaf0-..." "프론트엔드 대시보드 구조는?"
+# nlm notebook query "af7bfaf0-..." "CSS 스타일링 관련 규칙은?" (Simple 작업도 질의)
 ```
 - 질의 결과에서 관련 파일/함수 목록을 추출한다
 - 필요 시 grep으로 교차 검증한다
@@ -125,8 +109,7 @@ nlm notebook query "<노트북ID>" "<작업 관련 질의>"
 | **피드백 루프** | 완료 후 자동 검증 (3회) | ✅ 자동 |
 | **🔄 랄프 루프** | 목표 달성까지 무한 반복 (최대 10회) | ✅ 자동 |
 | **🔄 작업 완료 자동 커밋** | 작업 완료 시 자동 git commit & push | ✅ 강제 (v3.6) |
-| **📋 복잡도 판정** | Phase 0 Step 0에서 Simple/Complex 분류 출력 | ✅ 강제 (v4.2) |
-| **📓 NotebookLM 질의** | Phase 0 Complex 작업에서 nlm query 강제 (설정 있을 때) | ✅ 강제 (v4.2) |
+| **📓 NotebookLM 질의** | Phase 0 **모든** 작업에서 nlm query 강제 (설정 있을 때) | ✅ 강제 (v4.3) |
 
 ---
 

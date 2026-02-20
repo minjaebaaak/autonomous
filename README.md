@@ -1,4 +1,4 @@
-# /autonomous v4.2
+# /autonomous v4.3
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -10,14 +10,19 @@
 
 ## 최신 변경사항
 
-### v4.2: Phase 0 복잡도 기반 분기 (2026-02-20)
+### v4.3: Phase 0 nlm 전 작업 강제 (2026-02-20)
 
-- **Phase 0 Step 0 신설**: 작업 복잡도 판정 (Simple/Complex) 필수 출력
-- **Simple** (텍스트 교체, 스타일링, 오타): grep만으로 충분 → nlm/기술문서 Read 생략
-- **Complex** (코드 로직, 버그, 새 기능): nlm query 강제 (v4.1 유지)
-- **배경**: v4.1에서 nlm 강제했으나, 간단한 작업에서도 "불필요" 자체 판단으로 건너뜀
-  - 원인: "모든 작업에 nlm"은 비효율 → Claude가 합리적으로 건너뜀
-  - 해결: 복잡도 분기로 Simple은 공식적으로 면제, Complex만 강제
+- **Simple/Complex 분기 폐지**: 모든 작업에서 nlm query 강제
+- **근거**: NotebookLM에 CLAUDE.md, MEMORY.md, 기술표, 규칙화 문서가 모두 포함
+  - CLAUDE.md #14 "모든 코드 작업 전 기술표 필수 확인" = 기존 규칙
+  - v4.2의 Simple 면제가 기존 필수 규칙과 충돌
+- **복잡도 판정 출력 제거**: 분기 목적이 없어졌으므로 Step 0 삭제
+- **Step 1-S/1-C 통합**: 단일 Step 1로 합침
+
+### v4.2: Phase 0 복잡도 기반 분기 (2026-02-20) — v4.3에서 폐지
+
+- Phase 0 Step 0 신설: 작업 복잡도 판정 (Simple/Complex) 필수 출력
+- Simple: nlm 면제, Complex: nlm 강제 → **v4.3에서 전면 강제로 변경**
 
 ### v4.1: Phase 0 nlm query 강제 실행 (2026-02-20)
 
