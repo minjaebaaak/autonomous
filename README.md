@@ -433,6 +433,45 @@ touch ~/.claude/state/EMERGENCY_STOP
 
 ---
 
+## 가이드
+
+| 가이드 | 경로 | 설명 |
+|--------|------|------|
+| **NotebookLM 세팅** | [`guides/notebooklm-setup.md`](guides/notebooklm-setup.md) | OS별(macOS/Linux/Windows) NotebookLM + Claude Code 통합 가이드 |
+
+---
+
+## 템플릿
+
+프로젝트에 복사하여 사용하는 스크립트/설정 템플릿입니다.
+
+| 템플릿 | 경로 | 설명 |
+|--------|------|------|
+| **nlm-sync.sh** | [`templates/nlm-sync.sh`](templates/nlm-sync.sh) | NotebookLM 소스 동기화 스크립트 (상단 수정 영역만 커스터마이징) |
+| **repomix-sync.sh** | [`templates/repomix-sync.sh`](templates/repomix-sync.sh) | Repomix 코드 묶음 재생성 + NotebookLM 업로드 파이프라인 |
+| **CLAUDE.md Phase 확장** | [`templates/claude-md-notebooklm-phase.md`](templates/claude-md-notebooklm-phase.md) | CLAUDE.md에 붙이는 NotebookLM Phase 확장 템플릿 |
+
+### 템플릿 사용법 (Quick Start)
+
+```bash
+# 1. nlm-sync.sh 복사 + 실행 권한
+cp templates/nlm-sync.sh 내프로젝트/scripts/nlm-sync.sh
+chmod +x 내프로젝트/scripts/nlm-sync.sh
+
+# 2. 상단 "프로젝트별 수정 영역"에서 노트북 ID + 파일 매핑 수정
+
+# 3. CLAUDE.md Phase 확장 복사
+cat templates/claude-md-notebooklm-phase.md >> 내프로젝트/CLAUDE.md
+# → <YOUR_NOTEBOOK_ID> 교체
+
+# 4. 동기화 테스트
+zsh 내프로젝트/scripts/nlm-sync.sh CLAUDE.md
+```
+
+상세 절차: [`guides/notebooklm-setup.md`](guides/notebooklm-setup.md) 참조
+
+---
+
 ## 프로젝트 디렉토리
 
 | 프로젝트 | 디렉토리 | 설명 |
