@@ -1,8 +1,8 @@
-# Autonomous Mode v4.6 - 범용 프레임워크
+# Autonomous Mode v4.7 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v4.6: AI 관점 최적화 — 다이어트 + alias + 스마트 로딩.
+> v4.7: 대화 → NotebookLM 자동 동기화 — 컨텍스트 압축 무손실화.
 
 ---
 
@@ -83,6 +83,18 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 - **🔴 Read 도구로 코드 파일 전체를 읽는 것 금지** (편집 직전 최소 범위만 허용)
 
 repomix 설정이 없으면 이 Step 건너뛰기.
+
+**Step 1.7: 이전 세션 복원 (nlm 대화 검색)** (선택 — 설정 있을 때)
+
+세션 이월(continuation) 또는 새 세션에서 이전 맥락이 필요하면:
+```bash
+nlm notebook query "<alias>" "지난 세션에서 작업하던 [주제] 진행 상황은?"
+```
+- 대화 원문이 NotebookLM에 저장되어 있으므로 정확한 맥락 복원 가능
+- MEMORY.md 수동 기록의 한계를 보완
+- Stop 훅이 세션 종료 시 자동으로 대화를 업로드 (CLAUDE.md 대화 동기화 설정 참조)
+
+대화 동기화 설정이 없으면 이 Step 건너뛰기.
 
 **Step 2: 관련 섹션 식별 및 출력** (필수)
 ```
@@ -167,7 +179,7 @@ repomix 설정이 없으면 이 Step 건너뛰기.
 
 | 카테고리 | 포함 기능 | 상태 |
 |---------|---------|------|
-| **Phase 0 강제** | 기술문서 참조, nlm 질의, repomix 스냅샷(attach 우선), Read 최소화 | ✅ (v4.6) |
+| **컨텍스트 보존** | nlm 질의, repomix 스냅샷(attach 우선), Read 최소화, **대화 자동 동기화** | ✅ (v4.7) |
 | **검증 체계** | AEGIS Protocol, 피드백 루프, Agent 교차 검증, 랄프 루프 | ✅ (v3.3) |
 | **문서 동기화** | 기술문서 참조, 문서 업데이트, 커밋 전 확인, 양방향 동기화 | ✅ (v3.0) |
 | **자율 실행** | ultrathink, Sequential Thinking, TodoWrite, Teams 필수 판단 | ✅ (v3.3) |
@@ -422,6 +434,9 @@ autonomous 레포/
    - **문서 동기화**: 커밋에 포함된 문서 중 NotebookLM 소스 해당 파일 → `nlm-sync.sh <파일>` 실행
    - **코드 동기화**: 코드 변경이 있으면 → `repomix-sync.sh` 실행 (코드 스냅샷 재생성 + 업로드)
    - nlm 실패 시 경고만 출력 (커밋 완료됨, 블로커 아님)
+7. 🔴 대화 동기화 (Stop 훅이 자동 처리 — 수동 불필요)
+   - 세션 종료 시 Stop 훅이 conversation-sync.sh 자동 실행
+   - 수동 필요 시: `bash scripts/conversation-sync.sh --title "<작업명>"`
 ```
 
 **절대 금지**:
