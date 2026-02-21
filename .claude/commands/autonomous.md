@@ -28,10 +28,11 @@ CLAUDE.md "Phase 확장 설정"에서 **Phase 0 NotebookLM** 항목을 찾는다
 export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
 nlm notebook query "<alias 또는 노트북ID>" "<작업 관련 질의>"
 
-# 예시 (alias 사용 — CLAUDE.md Phase 확장에서 alias 확인):
-# nlm notebook query sm "SERP 수집 관련 파일과 함수는?"
-# nlm notebook query sm "프론트엔드 대시보드 구조는?"
-# nlm notebook query sm "CSS 스타일링 관련 규칙은?"
+# 카테고리별 질의 (CLAUDE.md Phase 확장에서 alias 확인):
+# nlm notebook query sm-rules "소유권 감지 규칙은?"     # 규칙/교훈
+# nlm notebook query sm-tech "SERP 수집 관련 파일은?"   # 기술/코드
+# nlm notebook query sm-conv "지난 세션에서 title 버그 수정은?"  # 대화 이력
+# 모르겠으면 여러 노트북 병렬 질의
 ```
 - 질의 결과에서 관련 파일/함수 목록을 추출한다
 - 필요 시 grep으로 교차 검증한다
@@ -87,12 +88,16 @@ repomix 설정이 없으면 이 Step 건너뛰기.
 **Step 1.7: 이전 세션 복원 (nlm 대화 검색)** (선택 — 설정 있을 때)
 
 세션 이월(continuation) 또는 새 세션에서 이전 맥락이 필요하면:
+
+1. 로컬 인덱스 확인 (즉시):
 ```bash
-nlm notebook query "<alias>" "지난 세션에서 작업하던 [주제] 진행 상황은?"
+python3 -c "import json; [print(f'{e[\"date\"]} {e[\"topic\"]}') for e in json.load(open(os.path.expanduser('~/.claude/conversation-index.json')))]" 2>/dev/null
 ```
-- 대화 원문이 NotebookLM에 저장되어 있으므로 정확한 맥락 복원 가능
-- MEMORY.md 수동 기록의 한계를 보완
-- Stop 훅이 세션 종료 시 자동으로 대화를 업로드 (CLAUDE.md 대화 동기화 설정 참조)
+2. 관련 주제 발견 시 → 대화 노트북 질의:
+```bash
+nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상황은?"
+```
+3. 미발견 시 → 전체 노트북 병렬 질의 후 인덱스 보완
 
 대화 동기화 설정이 없으면 이 Step 건너뛰기.
 
