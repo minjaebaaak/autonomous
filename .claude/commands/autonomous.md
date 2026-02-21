@@ -1,8 +1,8 @@
-# Autonomous Mode v4.7 - 범용 프레임워크
+# Autonomous Mode v4.8 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v4.7: 대화 → NotebookLM 자동 동기화 — 컨텍스트 압축 무손실화.
+> v4.8: Phase 0 nlm 강제 메커니즘 — "실행 지침"에 nlm을 첫 번째 행동으로 통합.
 
 ---
 
@@ -124,6 +124,10 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 
 "관련 파일 목록 추출했나?"
   → 아니면 Phase 0 미완료
+
+"규칙이 X를 반영한다고 주장하려 하고 있나?"
+  → 해당 규칙을 nlm/Read로 확인했나?
+  → 아니면 확인 후 주장 (P2 위반 방지)
 ```
 
 ### Phase 0 미완료 시 조치
@@ -148,13 +152,16 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 | 코드 구조 파악 | `attach_packed_output` / `pack_codebase(compress)` | ❌ Read 여러 파일 순회 |
 | 코드 내 패턴 검색 | `grep_repomix_output` / Grep | ❌ Read 후 눈으로 검색 |
 | 파일 편집 | Read(offset, limit) → Edit | ❌ Read 전체 파일 |
+| 수정 결과 검증 (소형 ~100줄) | Read | ❌ nlm (오버헤드 > 이득) |
+| 수정 결과 검증 (대형 100줄+) | `nlm notebook query` | ❌ Read 전체 파일 |
 | 과거 구현/설계 확인 | `nlm notebook query` | ❌ git log 전체 조회 |
 
-### Read 도구 사용 조건 (3가지만 허용)
+### Read 도구 사용 조건 (4가지만 허용)
 
 1. **Edit/Write 직전** — 수정 범위만 (offset + limit 50~100줄)
 2. **repomix/grep으로 찾을 수 없는 특수 파일** — 설정 파일, JSON 등
 3. **특정 줄 번호를 이미 알 때** — offset + limit 최소 읽기
+4. **수정 결과 검증** — 소형 파일(~100줄)은 Read, 대형 파일은 nlm query
 
 ### 질의 패턴 (개발 시작 전 반드시 실행)
 
@@ -196,10 +203,27 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 
 주어진 작업: $ARGUMENTS
 
-### Phase 1: 초기화
+### 🔴 STEP 0: nlm 질의 + 초기화 (차단 — 이 출력 없이 다음 단계 진행 금지)
+
+아래 Bash 명령을 **즉시** 실행하세요:
 ```bash
 mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
+export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
+# CLAUDE.md "Phase 확장 설정"에서 nlm alias를 확인하여 아래 질의 실행
+nlm notebook query <alias> "[작업 관련 질의]"
 ```
+
+nlm 실패 시: `nlm login` → 재시도. 재시도도 실패 시: Read 도구로 기술문서 직접 읽기.
+
+이 명령 실행 후 **반드시** 아래 형식 출력:
+```
+✅ Phase 0 완료 - 기술문서 확인됨
+관련 파일: [nlm 결과에서 추출]
+관련 규칙: [해당 규칙 번호]
+```
+
+🔴 이 출력이 없으면 Explore/Read/다른 도구 사용 = Phase 0 미완료 = 규칙 위반.
+🔴 Phase 0 상세 절차는 상단 "Phase 0: MANDATORY PRE-CHECK" 섹션 참조.
 
 ### Phase 2: 📝 문서 업데이트 의무
 
@@ -500,3 +524,6 @@ touch ~/.claude/state/EMERGENCY_STOP
 ---
 
 **즉시 실행을 시작합니다.**
+
+🔴 **첫 번째 행동**: 위 "STEP 0: nlm 질의 + 초기화"의 Bash 명령을 실행하세요.
+Explore/Read/다른 도구보다 nlm이 먼저입니다.
