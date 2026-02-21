@@ -2,144 +2,216 @@
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
-> AEGIS + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화 + Agent Teams + 자동 커밋 + NotebookLM + Repomix + 대화 자동 동기화 통합
-
-`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.
+> `/autonomous [작업]` 하나로 AEGIS 검증, NotebookLM 통합, 문서 동기화, Agent Teams, 자동 커밋이 모두 적용됩니다.
 
 ---
 
-## 최신 변경사항
+## Quick Start
 
-### v4.7: 대화 → NotebookLM 자동 동기화 + 카테고리별 노트북 분리 (2026-02-21)
+### 3줄 설치
 
-- **"기억하지 말고 기록하라" 완성**: 문서/코드에 이어 **대화 자체**도 NotebookLM에 자동 보존
-- **conversation-sync.sh 신규**: JSONL → 유효 텍스트 추출(96.8% 노이즈 제거) → NotebookLM 업로드
-- **크기 기반 멀티 노트**: 400K words 초과 시 `{타이틀}-{날짜}-{순번}-{HHMMss}` 으로 자동 분할
-- **자동 주제 추출**: 첫 번째 유의미한 사용자 메시지에서 토픽 자동 추출 (continuation 메시지 필터링)
-- **Stop 훅 자동 트리거**: 세션 종료 시 10턴+/5KB+ 조건 충족하면 자동 업로드
-- **Step 1.7 신설**: 이전 세션 복원용 nlm query — 대화 원문에서 정확한 맥락 검색
-- **카테고리별 노트북 분리**: 단일 노트북 → 3개 카테고리(rules/conv/tech) 분리
-  - 규칙/교훈(sm-rules), 대화 기록(sm-conv), 기술/코드(sm-tech) 독립 관리
-  - nlm-sync.sh: FILE_NOTEBOOK_MAP으로 파일별 자동 라우팅
-  - 각 카테고리가 독립적으로 무한 확장 가능 (용량 초과 시 sm-rules-2 등)
-- **로컬 대화 인덱스**: `~/.claude/conversation-index.json` — 세션 종료 시 자동 기록
-  - 캐시+보완 패턴: 로컬 인덱스 검색 → 미스 시 nlm query → 결과로 인덱스 보완
-- **컨텍스트 압축 무손실**: 압축으로 사라지는 미묘한 논의/중간 결론이 영구 보존
+```bash
+mkdir -p ~/.claude/commands
+curl -o ~/.claude/commands/autonomous.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
+curl -o ~/.claude/CLAUDE.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
+```
 
-### v4.6: AI 관점 최적화 — 다이어트 + alias + 스마트 로딩 (2026-02-21)
+### 사용
 
-- **구조 다이어트**: 615줄 → 482줄 (-22%)
-  - Phase 5.6-5.9 압축: 102줄 → 12줄 (원칙+자가점검만, 상세는 CLAUDE.md 위임)
-  - Phase 9 랄프 루프: 78줄 → 2줄 (`/infinite-loop` 커맨드 참조)
-  - 기능 테이블: 20개 항목 → 5개 카테고리
-- **nlm alias 도입**: UUID 36자 반복 제거 → `nlm notebook query sm "..."` 형식
-- **Step 1.5 스마트 로딩**: `attach_packed_output` 우선(즉시) → `pack_codebase` 폴백
-- **5개 에이전트 경쟁 토론 기반**: 낙관론(현행 유지) vs 비판론(5가지 개선) 종합 판정
+```
+/autonomous 배포해줘
+/autonomous REST API 만들어줘
+/autonomous 버그 수정해줘
+```
 
-### v4.5: "기억하지 말고 기록하라" — nlm + repomix 컨텍스트 절약 통합 (2026-02-21)
+### 새 프로젝트에 적용하기
 
-- **철학 도입**: "기억하지 말고 기록하라" — 컨텍스트 로드(기억) 대신 NotebookLM에 기록하고 검색
-- **Phase 0 Step 1.5 신설**: repomix `pack_codebase(compress: true)` 세션 스냅샷
-  - 세션 시작 시 1회 실행, outputId 재사용하여 `grep_repomix_output`으로 탐색
-  - CLAUDE.md "Phase 0 확장: repomix 설정"에서 패턴 참조
-- **컨텍스트 절약 규칙 섹션 신설**: 도구 선택 기준 테이블 + Read 3가지 허용 조건 + 질의 패턴
-- **Phase 6.5 확장**: 커밋 후 문서 동기화 + 코드 동기화(`repomix-sync.sh`) 트리거
-- **자동 활성화 기능**: `📦 repomix 세션 스냅샷` + `📏 Read 최소화` 2건 추가
-- **외부 실증**: TaxNavi 프로젝트에서 repomix+nlm 조합으로 "하루 종일 대화 압축 0회" 달성
+**A-Z 가이드**: [`guides/quickstart.md`](guides/quickstart.md) — 설치부터 NotebookLM 통합까지 전체 과정
 
-### v4.4: nlm 인증 만료 시 재인증 강제 (2026-02-21)
-
-- **C절 세분화**: `nlm 실패` 를 C-1(인증 만료) / C-2(기타 오류)로 분리
-- **C-1 강제 흐름**: 인증 만료 → 🔴 `nlm login` 필수 → 재시도 → 실패 시에만 fallback
-- **절대 금지 명시**: 인증 만료 시 `nlm login` 없이 바로 fallback 금지
-- **교훈**: v4.3에서 fallback이 먼저 나와 재인증이 무시되는 구조적 결함 수정
-
-### v4.3: Phase 0 nlm 전 작업 강제 (2026-02-20)
-
-- **Simple/Complex 분기 폐지**: 모든 작업에서 nlm query 강제
-- **근거**: NotebookLM에 CLAUDE.md, MEMORY.md, 기술표, 규칙화 문서가 모두 포함
-  - CLAUDE.md #14 "모든 코드 작업 전 기술표 필수 확인" = 기존 규칙
-  - v4.2의 Simple 면제가 기존 필수 규칙과 충돌
-- **복잡도 판정 출력 제거**: 분기 목적이 없어졌으므로 Step 0 삭제
-- **Step 1-S/1-C 통합**: 단일 Step 1로 합침
-
-### v4.2: Phase 0 복잡도 기반 분기 (2026-02-20) — v4.3에서 폐지
-
-- Phase 0 Step 0 신설: 작업 복잡도 판정 (Simple/Complex) 필수 출력
-- Simple: nlm 면제, Complex: nlm 강제 → **v4.3에서 전면 강제로 변경**
-
-### v4.1: Phase 0 nlm query 강제 실행 (2026-02-20)
-
-- **Phase 0 Step 1**: 선언적 지시 → 절차적 Bash 명령으로 전환
-- `nlm notebook query` 실행을 구체적 코드 블록으로 명시
-- `Read 도구로 기술문서 직접 읽기 금지` 명시적 금지 추가
-
-### v4.0: NotebookLM 자동 동기화 (2026-02-20)
-
-- **Phase 6.5**: 커밋 후 NotebookLM 소스 자동 동기화 (문서 변경 감지 → `nlm-sync.sh` 실행)
-- nlm 실패 시 경고만 출력 (블로커 아님)
-
-### v3.9: Phase 0 NotebookLM 질의 통합 (2026-02-20)
-
-- **Phase 0 Step 1**: 기술문서 직접 Read → `nlm notebook query` 우선 사용
-- NotebookLM 설정이 CLAUDE.md에 있으면 자동 활성화
-- nlm 실패 시 직접 Read fallback
-
-### v3.8 이전 변경사항
-- **v3.8**: 횡단 관심사 계층별 sweep (Phase 5.9)
-- **v3.7**: 사용자 여정 일관성 (Phase 5.8)
-- **v3.6**: 작업 완료 자동 commit & push (Phase 6.5)
-- **v3.5**: Source-Sink 정합성 (Phase 5.6) + 멱등성 원칙 (Phase 5.7)
-- **v3.0**: 범용화 완료 — 프로젝트 특화 분리, Phase 확장 체계
+| 단계 | 시간 | 얻는 것 |
+|------|------|---------|
+| Phase 1: 기본 설치 | 5분 | `/autonomous` 기본 사용 |
+| Phase 2: 프로젝트 구조 | 10분 | 프로젝트별 규칙 + Phase 확장 |
+| Phase 3: NotebookLM 통합 | 15분 | 토큰 절약 (~94%), 지식 영구 보존 |
+| Phase 4: 대화 동기화 | 10분 | 대화 자동 보존, 세션 간 맥락 유지 |
+| Phase 5: 훅 설정 | 5분 | 자동 알림, 무한루프 방지 |
 
 ---
 
-## 🔭 미래 방향
+## 디렉토리 구조
 
-autonomous는 세 가지 축을 중심으로 진화합니다.
+### 전역 (모든 프로젝트 공유)
 
-### 축 1: 지식 외재화 — "컨텍스트 윈도우 밖으로"
-
-**문제**: Claude Code의 컨텍스트 윈도우는 유한합니다. CLAUDE.md(~18K 토큰) + MEMORY.md(~4.5K 토큰) = 매 턴 ~22.5K 토큰이 자동 소비됩니다. 프로젝트가 커지면 규칙/경험/문서가 증가하고, 컨텍스트 윈도우 대비 자동 소비 비율이 위험 수준에 도달합니다.
-
-**해결 방향**:
 ```
-Phase 1 (완료): CLAUDE.md/MEMORY.md 압축 → ~2,900 토큰/턴 절약
-Phase 2 (완료): NotebookLM에 지식 외재화 → Phase 0에서 ~47K 토큰 절약
-Phase 3 (계획): 규칙/교훈의 자동 분류 → 빈번한 것만 CLAUDE.md에 유지
-Phase 4 (구상): MCP 서버 없이 외부 지식 접근 → CLI 기반 질의로 상시 비용 0
-```
-
-**핵심 원칙**: 자주 참조하는 지식은 가까이(CLAUDE.md), 가끔 참조하는 지식은 멀리(NotebookLM) — 캐시 계층 구조와 동일한 철학.
-
-### 축 2: 자율 학습 루프 — "실수에서 규칙으로"
-
-**현재 메커니즘**:
-```
-실수 발생 → 교훈 추출 → CLAUDE.md/MEMORY.md에 기록 → 규칙화
-→ 범용화 가능하면 autonomous.md에 추상화 버전 추가
-→ NotebookLM에 동기화 (v4.0)
+~/.claude/
+├── commands/
+│   └── autonomous.md          # v4.7 범용 프레임워크 (SSOT)
+├── CLAUDE.md                  # 전역 규칙 (한국어, 양방향 동기화)
+├── settings.json              # 전역 훅 설정
+├── state/
+│   ├── AUTONOMOUS_MODE        # 자율 모드 활성 플래그
+│   └── EMERGENCY_STOP         # 긴급 중단 (touch로 생성)
+├── conversation-index.json    # 대화 동기화 인덱스
+└── projects/
+    └── <project-hash>/
+        ├── *.jsonl            # 세션 대화 기록 (자동 생성)
+        └── memory/
+            └── MEMORY.md      # 세션 간 기억
 ```
 
-**미래 목표**:
-- 교훈의 "빈도 기반 승격/강등" — 3회 이상 참조된 교훈은 자동으로 CLAUDE.md Tier 1 후보
-- 6개월간 미참조 규칙은 MEMORY.md → NotebookLM으로 아카이브 제안
-- 프로젝트 간 교훈 교차 검증 — 2개+ 프로젝트에서 동일 패턴 발견 시 자동 범용화 후보
+### 프로젝트 (각 프로젝트별)
 
-### 축 3: 다중 프로젝트 확장 — "하나의 지혜, 여러 프로젝트"
-
-**현재 구조**:
 ```
-autonomous.md (범용, 전역)
-  └─ CLAUDE.md Phase 확장 (프로젝트별)
-       ├─ ShareManager: SERP 모니터링 (탄생 프로젝트)
-       └─ (미래 프로젝트들)
+your-project/
+├── CLAUDE.md                  # 프로젝트 규칙 + Phase 확장 설정
+├── .claude/
+│   ├── settings.local.json    # 프로젝트별 훅 설정
+│   └── hooks/
+│       ├── notify-user.sh     # 사용자 알림
+│       └── safe-stop-hook.sh  # 무한루프 방지
+├── scripts/
+│   ├── nlm-sync.sh            # 문서 → NotebookLM 동기화
+│   ├── repomix-sync.sh        # 코드 → NotebookLM 동기화
+│   └── conversation-sync.sh   # 대화 → NotebookLM 동기화
+└── docs/                      # 기술문서
 ```
 
-**확장 시 검증할 가설**:
-- 범용 autonomous.md가 다른 기술 스택(Django, Vue, Go 등)에서도 유효한가?
-- Phase 확장 체계가 프로젝트 규모에 따라 스케일하는가?
-- 프로젝트 간 교훈 이전이 실제로 생산성을 높이는가?
+### autonomous 레포 (이 저장소)
+
+```
+autonomous/
+├── .claude/
+│   ├── CLAUDE.md              # 전역 CLAUDE.md 원본
+│   └── commands/
+│       └── autonomous.md      # autonomous.md 원본
+├── guides/
+│   ├── quickstart.md          # A-Z 온보딩 가이드
+│   └── notebooklm-setup.md   # nlm CLI 상세 설치 가이드
+├── templates/                 # 프로젝트에 복사하여 사용
+│   ├── nlm-sync.sh
+│   ├── repomix-sync.sh
+│   ├── conversation-sync.sh
+│   ├── settings-local.json
+│   ├── claude-md-notebooklm-phase.md
+│   └── hooks/
+│       ├── notify-user.sh
+│       └── safe-stop-hook.sh
+├── projects/                  # 프로젝트별 교훈 아카이브
+│   └── sharemanager/
+└── README.md
+```
+
+---
+
+## 설치
+
+### 전역 설치 (권장)
+
+```bash
+mkdir -p ~/.claude/commands
+curl -o ~/.claude/commands/autonomous.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
+```
+
+### CLAUDE.md 포함 설치
+
+```bash
+curl -o ~/.claude/CLAUDE.md \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
+```
+
+> **CLAUDE.md vs autonomous.md**
+> - `CLAUDE.md`: 프로젝트 규칙 (언어, 행동 방식, Phase 확장 가이드)
+> - `autonomous.md`: 실행 모드 커맨드 (어떻게 작업할지)
+
+### 프로젝트 Phase 확장 설정
+
+> **주의**: 프로젝트 `.claude/commands/autonomous.md`를 생성하지 마세요.
+> 프로젝트 로컬 파일이 전역 범용 autonomous.md를 오버라이드합니다.
+> 프로젝트 특화 설정은 반드시 CLAUDE.md "Phase 확장" 섹션에만 추가하세요.
+
+전역 설치 후, 각 프로젝트 CLAUDE.md 하단에 Phase 확장 섹션을 추가하세요:
+
+```markdown
+## /autonomous Phase 확장 설정
+
+- **Phase 0 기술문서**: `docs/technical-reference.html`. 섹션 매핑은 #14 참조.
+- **Phase 0 NotebookLM**: 노트북 `{NOTEBOOK_UUID}`
+  - 질의: `nlm notebook query "{NOTEBOOK_UUID}" "질의 내용"`
+  - 기술표 동기화: `bash scripts/nlm-sync.sh docs/technical-reference.html`
+  - 전체 동기화: `bash scripts/repomix-sync.sh`
+  - 자동 동기화 대상: `docs/technical-reference.html`, `PROJECT_DOCUMENTATION.md`
+- **Phase 2 파일→문서 매핑**: 매핑 규칙 정의.
+- **Phase 7**: 검증/배포 명령어.
+```
+
+---
+
+## 가이드
+
+| 가이드 | 경로 | 설명 |
+|--------|------|------|
+| **A-Z 온보딩** | [`guides/quickstart.md`](guides/quickstart.md) | 새 프로젝트 적용 완전 가이드 (설치~NotebookLM~훅) |
+| **NotebookLM 세팅** | [`guides/notebooklm-setup.md`](guides/notebooklm-setup.md) | OS별(macOS/Linux/Windows) nlm CLI 설치 + 인증 |
+
+---
+
+## 템플릿
+
+프로젝트에 복사하여 사용하는 스크립트/설정 템플릿입니다. 상단 "프로젝트별 수정 영역"만 편집하면 됩니다.
+
+| 템플릿 | 경로 | 설명 |
+|--------|------|------|
+| **nlm-sync.sh** | [`templates/nlm-sync.sh`](templates/nlm-sync.sh) | 문서 → NotebookLM 동기화 (파일별 노트북 자동 라우팅) |
+| **repomix-sync.sh** | [`templates/repomix-sync.sh`](templates/repomix-sync.sh) | 코드 묶음 재생성 + NotebookLM 업로드 파이프라인 |
+| **conversation-sync.sh** | [`templates/conversation-sync.sh`](templates/conversation-sync.sh) | 세션 대화 → NotebookLM 자동 동기화 (v4.7) |
+| **settings-local.json** | [`templates/settings-local.json`](templates/settings-local.json) | 프로젝트 훅 설정 (`<PROJECT_PATH>` 교체) |
+| **CLAUDE.md Phase 확장** | [`templates/claude-md-notebooklm-phase.md`](templates/claude-md-notebooklm-phase.md) | CLAUDE.md에 붙이는 Phase 확장 템플릿 |
+| **notify-user.sh** | [`templates/hooks/notify-user.sh`](templates/hooks/notify-user.sh) | macOS/Linux 사용자 알림 훅 |
+| **safe-stop-hook.sh** | [`templates/hooks/safe-stop-hook.sh`](templates/hooks/safe-stop-hook.sh) | Ralph Loop 무한루프 방지 안전장치 |
+
+### 템플릿 사용법
+
+```bash
+# 1. 스크립트 복사 + 실행 권한
+cp templates/nlm-sync.sh 내프로젝트/scripts/nlm-sync.sh
+chmod +x 내프로젝트/scripts/nlm-sync.sh
+
+# 2. 상단 "프로젝트별 수정 영역"에서 노트북 ID + 파일 매핑 수정
+
+# 3. CLAUDE.md Phase 확장 추가
+cat templates/claude-md-notebooklm-phase.md >> 내프로젝트/CLAUDE.md
+# → <YOUR_NOTEBOOK_ID> 교체
+
+# 4. 동기화 테스트
+zsh 내프로젝트/scripts/nlm-sync.sh CLAUDE.md
+```
+
+상세 절차: [`guides/quickstart.md`](guides/quickstart.md) 참조
+
+---
+
+## Phase 구조
+
+| Phase | 이름 | 설명 |
+|-------|------|------|
+| **Phase 0** | 사전 점검 | 기술문서 참조 — nlm query 우선, fallback Read (CLAUDE.md Phase 확장 참조) |
+| **Phase 1** | 초기화 | 상태 파일 생성 |
+| **Phase 2** | 문서 업데이트 | 코드 변경 후 기술문서 업데이트 (CLAUDE.md 매핑 참조) |
+| **Phase 3** | autonomous 동기화 | autonomous.md 변경 시 전역 + 레포 동기화 |
+| **Phase 3.5** | 양방향 동기화 | 프로젝트 교훈 범용화, CLAUDE.md Phase 확장 백업 |
+| **Phase 4** | AEGIS 인지 레이어 | ultrathink, Sequential Thinking, TodoWrite |
+| **Phase 4.5** | Agent Teams 필수 판단 | 매 작업마다 팀원 필요 여부 판단 + 출력 의무 |
+| **Phase 5** | 자율 실행 | 사용자 의도 확인, 모호성 즉시 확인 |
+| **Phase 5.5** | 에이전트 검증 | 에이전트 결과 원본 대조 |
+| **Phase 5.6~5.9** | 정합성 검증 | Source-Sink, 멱등성, 사용자 여정, 횡단 관심사 |
+| **Phase 6** | 커밋 전 문서 확인 | 문서 업데이트 없이 커밋 금지 |
+| **Phase 6.5** | 자동 커밋 & 동기화 | commit & push + NotebookLM 자동 동기화 |
+| **Phase 7** | AEGIS 검증 | 빌드 검증, 배포, 프로덕션 확인 |
+| **Phase 8** | 피드백 루프 | 검증 실패 시 자동 수정 (최대 3회) |
+| **Phase 9** | 랄프 루프 | 목표 달성까지 무한 반복 (최대 10회) |
 
 ---
 
@@ -195,55 +267,12 @@ autonomous 생태계는 4계층으로 지식을 관리합니다. 각 계층은 �
 
 ### 계층별 상세
 
-#### L1: autonomous.md — 범용 원칙 (전역 SSOT)
-
-| 항목 | 설명 |
-|------|------|
-| **위치** | `~/.claude/commands/autonomous.md` |
-| **로드 시점** | `/autonomous` 커맨드 호출 시 |
-| **SSOT** | 전역 파일이 유일한 원본. 레포는 복사본 |
-| **수정 규칙** | 전역에서만 수정 → 레포에 복사 → 커밋 & 푸시 |
-| **내용 범위** | Phase 0~9 체계, 검증 원칙(P1~P6), 에이전트 규칙, 자가 점검 질문 |
-| **성장 방식** | 프로젝트 교훈 → 추상화 → 범용 원칙으로 승격 |
-
-**핵심**: autonomous.md는 "어떤 프로젝트에서든 적용 가능한 원칙"만 포함합니다. 프로젝트 특화 내용(파일 경로, 배포 명령, 노트북 ID 등)은 포함하지 않습니다.
-
-#### L2: CLAUDE.md — 프로젝트 규칙
-
-| 항목 | 설명 |
-|------|------|
-| **위치** | 각 프로젝트 루트 `CLAUDE.md` |
-| **로드 시점** | 매 턴 자동 (Claude Code 기본 동작) |
-| **구조** | Tier 1(핵심 원칙) → Tier 2(체크리스트) → Tier 3(도메인) → Phase 확장 |
-| **Phase 확장** | autonomous.md가 참조하는 프로젝트별 설정 (기술문서 경로, 섹션 매핑, 배포 명령) |
-| **성장 방식** | 버그/실수 → 교훈 → 규칙 Tier에 추가 |
-
-**핵심**: CLAUDE.md는 "이 프로젝트에서 반드시 지켜야 할 규칙"을 담습니다. autonomous.md의 범용 Phase가 CLAUDE.md의 Phase 확장을 참조하여 프로젝트별로 커스터마이징됩니다.
-
-#### L3: MEMORY.md — 세션 간 기억
-
-| 항목 | 설명 |
-|------|------|
-| **위치** | `~/.claude/projects/{project-hash}/memory/MEMORY.md` |
-| **로드 시점** | 매 턴 자동 (Claude Code auto memory) |
-| **제한** | 200줄 초과 시 잘림 → 핵심만 유지해야 함 |
-| **내용** | 프로젝트 핵심 정보 요약, 교훈 색인, 운영 노하우 |
-| **성장 방식** | 반복 패턴 확인 시 기록, 오래된 정보 정리 |
-
-**핵심**: MEMORY.md는 "CLAUDE.md에 넣기엔 범용적이지 않지만, 세션마다 알아야 할 정보"를 담습니다. 200줄 제한 때문에 정기적인 압축이 필요합니다.
-
-#### L4: NotebookLM — 외부 지식 저장소
-
-| 항목 | 설명 |
-|------|------|
-| **위치** | Google NotebookLM (클라우드) |
-| **접근 방식** | `nlm notebook query` CLI (상시 비용 0) |
-| **용량** | 무제한 (여러 소스 업로드 가능) |
-| **카테고리 분리** | rules(규칙/교훈), conv(대화 기록), tech(기술/코드) (v4.7) |
-| **동기화** | 문서 → `nlm-sync.sh` (v4.0), 대화 → `conversation-sync.sh` (v4.7) |
-| **소스 예시** | 기술표(HTML→텍스트 변환), 프로젝트 문서, 교훈 원본, Repomix 코드 묶음, 대화 세션 |
-
-**핵심**: NotebookLM은 "컨텍스트 윈도우에 넣을 수 없는 대용량 지식"을 저장합니다. Phase 0에서 필요한 부분만 질의하여 토큰을 절약합니다. v4.7부터 카테고리별 노트북 분리로 용량 초과 시에도 메모리 유실 없이 무한 확장 가능합니다.
+| 계층 | 위치 | 로드 시점 | 내용 | 핵심 |
+|------|------|----------|------|------|
+| **L1** | `~/.claude/commands/autonomous.md` | `/autonomous` 호출 | Phase 체계, 검증 원칙, 에이전트 규칙 | 범용 원칙만 (프로젝트 특화 X) |
+| **L2** | 프로젝트 루트 `CLAUDE.md` | 매 턴 자동 | Tier 1~3 규칙 + Phase 확장 | 프로젝트별 규칙 |
+| **L3** | `~/.claude/projects/.../MEMORY.md` | 매 턴 자동 | 핵심 요약, 교훈 색인 | 200줄 제한, 정기 압축 필요 |
+| **L4** | Google NotebookLM | nlm query 시 | 기술표, 문서, 교훈, 코드, 대화 | 무제한, 상시 비용 0 |
 
 ### 지식 흐름도
 
@@ -272,16 +301,14 @@ autonomous 생태계는 4계층으로 지식을 관리합니다. 각 계층은 �
 
 ### 토큰 예산 구조
 
-Claude Code의 컨텍스트 윈도우에서 자동 소비되는 토큰:
-
 | 소스 | 크기 | 로드 시점 | 비고 |
 |------|------|----------|------|
-| CLAUDE.md | ~18K 토큰 | 매 턴 | 압축 후 (원래 ~23K) |
-| MEMORY.md | ~4.5K 토큰 | 매 턴 | 압축 후 (원래 ~7K) |
+| CLAUDE.md | ~18K 토큰 | 매 턴 | 압축 후 |
+| MEMORY.md | ~4.5K 토큰 | 매 턴 | 압축 후 |
 | autonomous.md | ~15K 토큰 | /autonomous 시 | Phase 전체 |
 | **합계** | **~37.5K 토큰/턴** | | /autonomous 세션 기준 |
 
-### 최적화 결과 (v4.0 기준)
+### 최적화 결과
 
 | 최적화 | 절약량 | 방법 |
 |--------|--------|------|
@@ -290,121 +317,11 @@ Claude Code의 컨텍스트 윈도우에서 자동 소비되는 토큰:
 | Phase 0 nlm query | ~47K 토큰/세션 | 기술표 319KB Read → nlm query 3K 응답 |
 | **총 절약** | **~7.5K/턴 + ~47K/세션** | |
 
-### 미래 최적화 로드맵
-
-```
-현재 (v4.0):
-  CLAUDE.md 18K + MEMORY.md 4.5K = 22.5K/턴 자동 소비
-  Phase 0: nlm query 우선, fallback Read
-
-목표 1 - 규칙 핫/콜드 분리:
-  CLAUDE.md를 "hot rules"(자주 참조, ~10K)와 "cold rules"(가끔 참조, ~8K)로 분리
-  cold rules는 NotebookLM으로 이동 → 필요 시 nlm query
-  예상 효과: ~8K/턴 추가 절약
-
-목표 2 - Phase 0 zero-read:
-  기술표를 한 번도 Read하지 않고 nlm query만으로 Phase 0 완료
-  현재: nlm 실패 시 fallback Read → 미래: nlm 안정화 후 fallback 제거
-
-목표 3 - MEMORY.md 동적 로딩:
-  MEMORY.md 200줄 제한 대신, 핵심 색인(~50줄)만 유지
-  상세 내용은 topic 파일(debugging.md, patterns.md)로 분리
-  필요 시 topic 파일 Read → 평소에는 색인만 로드
-```
-
----
-
-## 자동 활성화 기능
-
-| 기능 | 설명 | 상태 |
-|------|------|------|
-| **Phase 0 강제** | 작업 전 기술문서 확인 필수 (건너뛰기 불가) | ✅ 자동 (v2.8) |
-| **에이전트 결과 검증** | 서브에이전트 보고값 원본 대조 필수 | ✅ 자동 (v2.9) |
-| **양방향 동기화** | 프로젝트 교훈 → 범용화 | ✅ 자동 (v3.0) |
-| **Agent Teams 필수 판단** | 매 작업마다 팀원 필요 여부 판단 + 출력 의무 | ✅ 강제 (v3.2) |
-| **Agent 결과 교차 검증** | Agent 보고 수량을 독립 Grep으로 교차 검증 + 결과 출력 | ✅ 강제 (v3.3) |
-| **기술문서 참조** | 작업 전 프로젝트 기술문서에서 파일/함수 확인 | ✅ 자동 |
-| **문서 업데이트** | 코드 변경 후 관련 문서 자동 업데이트 | ✅ 자동 |
-| **autonomous 자동 커밋** | autonomous.md 개선 시 자동 git 반영 | ✅ 자동 (v2.5) |
-| **커밋 전 문서 확인** | 문서 업데이트 강제 확인 | ✅ 자동 (v2.6) |
-| **AEGIS Protocol** | 7-Layer 검증 프레임워크 | ✅ 자동 |
-| **ultrathink** | 심층 분석 모드 | ✅ 자동 |
-| **Sequential Thinking** | 복잡한 문제 시 단계별 사고 | ✅ 필요 시 |
-| **TodoWrite** | 진행 추적 | ✅ 자동 |
-| **피드백 루프** | 완료 후 자동 검증 (3회) | ✅ 자동 |
-| **랄프 루프** | 목표 달성까지 무한 반복 (최대 10회) | ✅ 자동 |
-| **작업 완료 자동 커밋** | 작업 완료 시 자동 git commit & push | ✅ 강제 (v3.6) |
-| **사용자 여정 일관성** | 단일 함수 정확성 ≠ 시스템 정확성 | ✅ 자동 (v3.7) |
-| **횡단 관심사 sweep** | 전 계층 체크리스트 + ORM write path 추적 | ✅ 자동 (v3.8) |
-| **NotebookLM 질의** | Phase 0에서 nlm query 우선 사용 | ✅ 자동 (v3.9) |
-| **NotebookLM 자동 동기화** | 문서 커밋 후 NotebookLM 소스 자동 동기화 | ✅ 자동 (v4.0) |
-
----
-
-## 설치
-
-### 전역 설치 (권장)
-
-```bash
-# autonomous.md 전역 설치
-mkdir -p ~/.claude/commands
-curl -o ~/.claude/commands/autonomous.md \
-  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
-```
-
-### CLAUDE.md 포함 설치
-
-한국어 응답 및 기본 행동 규칙을 포함한 CLAUDE.md도 함께 설치합니다:
-
-```bash
-mkdir -p ~/.claude/commands
-curl -o ~/.claude/CLAUDE.md \
-  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
-curl -o ~/.claude/commands/autonomous.md \
-  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
-```
-
-> **CLAUDE.md vs autonomous.md**
-> - `CLAUDE.md`: 프로젝트 규칙 (언어, 행동 방식, Phase 확장 가이드)
-> - `autonomous.md`: 실행 모드 커맨드 (어떻게 작업할지)
-
-### 프로젝트 Phase 확장 설정
-
-> **주의**: 프로젝트 `.claude/commands/autonomous.md`를 생성하지 마세요.
-> 프로젝트 로컬 파일이 전역 범용 autonomous.md를 오버라이드합니다.
-> 프로젝트 특화 설정은 반드시 CLAUDE.md "Phase 확장" 섹션에만 추가하세요.
-
-전역 설치 후, 각 프로젝트 CLAUDE.md 하단에 Phase 확장 섹션을 추가하세요:
-
-```markdown
-## /autonomous Phase 확장 설정
-
-- **Phase 0 기술문서**: `docs/technical-reference.html`. 섹션 매핑은 #14 참조.
-- **Phase 0 NotebookLM**: 노트북 `{NOTEBOOK_UUID}`
-  - 질의: `nlm notebook query "{NOTEBOOK_UUID}" "질의 내용"`
-  - 기술표 동기화: `bash scripts/nlm-sync.sh docs/technical-reference.html`
-  - 전체 동기화: `bash scripts/repomix-sync.sh`
-  - 자동 동기화 대상: `docs/technical-reference.html`, `PROJECT_DOCUMENTATION.md`
-- **Phase 2 파일→문서 매핑**: 매핑 규칙 정의.
-- **Phase 7**: 검증/배포 명령어.
-```
-
----
-
-## 사용법
-
-```
-/autonomous 배포해줘
-/autonomous REST API 만들어줘
-/autonomous 버그 수정해줘
-```
-
 ---
 
 ## 동기화 규칙 (전역 → 레포 단방향)
 
 > **전역 파일(`~/.claude/commands/autonomous.md`)이 유일한 원본.**
-> **레포의 autonomous.md를 직접 수정하면 전역과 불일치 발생 → 버전 혼동.**
 
 ### 범용 autonomous.md 수정 시
 ```
@@ -423,70 +340,33 @@ curl -o ~/.claude/commands/autonomous.md \
 4. autonomous 레포 커밋 & 푸시
 ```
 
-### 프로젝트 추가 방법
-```
-1. 전역 autonomous.md 설치 (이미 되어있으면 생략)
-2. 프로젝트 CLAUDE.md에 "Phase 확장" 섹션 추가
-3. (선택) NotebookLM 노트북 생성 + nlm-sync.sh 설정
-4. (선택) autonomous_temp/projects/[프로젝트]/ 디렉토리 생성
-   - CLAUDE-ext.md: Phase 확장 백업
-   - autonomous-history.md: 교훈 아카이브
-   - README.md: 프로젝트 설명
-```
-
 ---
 
-## Phase 구조
+## 자동 활성화 기능
 
-| Phase | 이름 | 설명 |
-|-------|------|------|
-| **Phase 0** | 사전 점검 | 기술문서 참조 — nlm query 우선, fallback Read (CLAUDE.md Phase 확장 참조) |
-| **Phase 1** | 초기화 | 상태 파일 생성 |
-| **Phase 2** | 문서 업데이트 | 코드 변경 후 기술문서 업데이트 (CLAUDE.md 매핑 참조) |
-| **Phase 3** | autonomous 동기화 | autonomous.md 변경 시 전역 + 레포 동기화 |
-| **Phase 3.5** | 양방향 동기화 | 프로젝트 교훈 범용화, CLAUDE.md Phase 확장 백업 |
-| **Phase 4** | AEGIS 인지 레이어 | ultrathink, Sequential Thinking, TodoWrite |
-| **Phase 4.5** | Agent Teams 필수 판단 | 매 작업마다 팀원 필요 여부 판단 + 출력 의무 |
-| **Phase 5** | 자율 실행 | 사용자 의도 확인, 모호성 즉시 확인 |
-| **Phase 5.5** | 에이전트 검증 | 에이전트 결과 원본 대조 |
-| **Phase 5.6** | Source-Sink 정합성 | 데이터 저장/조회 대상 일치 확인 |
-| **Phase 5.7** | 멱등성 원칙 | 반복 실행 로직 2회 이상 테스트 |
-| **Phase 5.8** | 사용자 여정 일관성 | "계산이 맞다 ≠ 시스템이 맞다" |
-| **Phase 5.9** | 횡단 관심사 sweep | 6계층 체크리스트 + ORM write path 추적 |
-| **Phase 6** | 커밋 전 문서 확인 | 문서 업데이트 없이 커밋 금지 |
-| **Phase 6.5** | 자동 커밋 & 동기화 | commit & push + NotebookLM 자동 동기화 |
-| **Phase 7** | AEGIS 검증 | 빌드 검증, 배포, 프로덕션 확인 |
-| **Phase 8** | 피드백 루프 | 검증 실패 시 자동 수정 (최대 3회) |
-| **Phase 9** | 랄프 루프 | 목표 달성까지 무한 반복 (최대 10회) |
+| 카테고리 | 포함 기능 | 상태 |
+|---------|---------|------|
+| **컨텍스트 보존** | nlm 질의, repomix 스냅샷, Read 최소화, 대화 자동 동기화 | ✅ v4.7 |
+| **검증 체계** | AEGIS Protocol, 피드백 루프, Agent 교차 검증, 랄프 루프 | ✅ v3.3 |
+| **문서 동기화** | 기술문서 참조, 문서 업데이트, 커밋 전 확인, 양방향 동기화 | ✅ v3.0 |
+| **자율 실행** | ultrathink, Sequential Thinking, TodoWrite, Teams 필수 판단 | ✅ v3.3 |
+| **커밋 & 배포** | 자동 커밋 & 푸시, NotebookLM 동기화 | ✅ v4.5 |
 
 ---
 
 ## 랄프 루프 (Ralph Wiggum Mode)
 
-### 놀이터 철학
-
 > 랄프가 놀이터를 짓고 미끄럼틀에서 뛰어내리다 다칩니다(실패).
 > 그러면 '뛰어내리지 마시오' 표지판(테스트)을 세웁니다.
-> 다음번에는 표지판을 보고 안전하게 타고 내려옵니다.
 > **실패할 때마다 표지판(검증 규칙)을 세워가며 완벽한 놀이터를 완성!**
 
-### 작동 방식
-
 ```
-Claude will:
 1. Work on the task (작업 수행)
 2. Try to exit (종료 시도)
 3. Stop hook blocks exit (Stop 훅이 종료 차단)
 4. Same prompt fed back (초기 프롬프트 재입력)
 5. Repeat until RALPH_DONE (RALPH_DONE 출력까지 반복)
 ```
-
-| 요소 | 설명 |
-|------|------|
-| **local.md** | 프롬프트/상태 기록으로 컨텍스트 유지 |
-| **Stop 훅 연동** | 종료 시도 차단 메커니즘 |
-| **RALPH_DONE** | 명시적 종료 조건 |
-| **표지판 추가** | 실패 시 새로운 검증 규칙/테스트 추가 |
 
 ---
 
@@ -498,50 +378,55 @@ touch ~/.claude/state/EMERGENCY_STOP
 
 ---
 
-## 가이드
-
-| 가이드 | 경로 | 설명 |
-|--------|------|------|
-| **NotebookLM 세팅** | [`guides/notebooklm-setup.md`](guides/notebooklm-setup.md) | OS별(macOS/Linux/Windows) NotebookLM + Claude Code 통합 가이드 |
-
----
-
-## 템플릿
-
-프로젝트에 복사하여 사용하는 스크립트/설정 템플릿입니다.
-
-| 템플릿 | 경로 | 설명 |
-|--------|------|------|
-| **nlm-sync.sh** | [`templates/nlm-sync.sh`](templates/nlm-sync.sh) | NotebookLM 소스 동기화 스크립트 (상단 수정 영역만 커스터마이징) |
-| **repomix-sync.sh** | [`templates/repomix-sync.sh`](templates/repomix-sync.sh) | Repomix 코드 묶음 재생성 + NotebookLM 업로드 파이프라인 |
-| **CLAUDE.md Phase 확장** | [`templates/claude-md-notebooklm-phase.md`](templates/claude-md-notebooklm-phase.md) | CLAUDE.md에 붙이는 NotebookLM Phase 확장 템플릿 |
-
-### 템플릿 사용법 (Quick Start)
-
-```bash
-# 1. nlm-sync.sh 복사 + 실행 권한
-cp templates/nlm-sync.sh 내프로젝트/scripts/nlm-sync.sh
-chmod +x 내프로젝트/scripts/nlm-sync.sh
-
-# 2. 상단 "프로젝트별 수정 영역"에서 노트북 ID + 파일 매핑 수정
-
-# 3. CLAUDE.md Phase 확장 복사
-cat templates/claude-md-notebooklm-phase.md >> 내프로젝트/CLAUDE.md
-# → <YOUR_NOTEBOOK_ID> 교체
-
-# 4. 동기화 테스트
-zsh 내프로젝트/scripts/nlm-sync.sh CLAUDE.md
-```
-
-상세 절차: [`guides/notebooklm-setup.md`](guides/notebooklm-setup.md) 참조
-
----
-
 ## 프로젝트 디렉토리
 
 | 프로젝트 | 디렉토리 | 설명 |
 |---------|---------|------|
 | ShareManager | `projects/sharemanager/` | SERP 모니터링 서비스 — autonomous 탄생 프로젝트 |
+
+---
+
+## 🔭 미래 방향
+
+### 축 1: 지식 외재화 — "컨텍스트 윈도우 밖으로"
+
+```
+Phase 1 (완료): CLAUDE.md/MEMORY.md 압축 → ~2,900 토큰/턴 절약
+Phase 2 (완료): NotebookLM에 지식 외재화 → Phase 0에서 ~47K 토큰 절약
+Phase 3 (계획): 규칙/교훈의 자동 분류 → 빈번한 것만 CLAUDE.md에 유지
+Phase 4 (구상): MCP 서버 없이 외부 지식 접근 → CLI 기반 질의로 상시 비용 0
+```
+
+### 축 2: 자율 학습 루프 — "실수에서 규칙으로"
+
+- 교훈의 "빈도 기반 승격/강등" — 3회 이상 참조된 교훈은 자동으로 CLAUDE.md Tier 1 후보
+- 6개월간 미참조 규칙은 MEMORY.md → NotebookLM으로 아카이브 제안
+- 프로젝트 간 교훈 교차 검증 — 2개+ 프로젝트에서 동일 패턴 발견 시 자동 범용화 후보
+
+### 축 3: 다중 프로젝트 확장 — "하나의 지혜, 여러 프로젝트"
+
+```
+autonomous.md (범용, 전역)
+  └─ CLAUDE.md Phase 확장 (프로젝트별)
+       ├─ ShareManager: SERP 모니터링 (탄생 프로젝트)
+       └─ (미래 프로젝트들)
+```
+
+---
+
+## 최신 변경사항
+
+### v4.7 (2026-02-21)
+대화 → NotebookLM 자동 동기화 + 카테고리별 노트북 분리. conversation-sync.sh 신규, 3분류(rules/conv/tech), 로컬 인덱스, Stop 훅 자동 트리거.
+
+### v4.5~v4.6 (2026-02-21)
+"기억하지 말고 기록하라" nlm+repomix 통합. 구조 다이어트(-22%), nlm alias 도입, 스마트 로딩.
+
+### v4.0~v4.4 (2026-02-20~21)
+NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 재인증(v4.4).
+
+### v3.0~v3.9 (2026-02-06~20)
+범용화 완료(v3.0), Agent Teams(v3.1~v3.4), Source-Sink/멱등성(v3.5), 자동 커밋(v3.6), 사용자 여정(v3.7), 횡단 관심사(v3.8), NotebookLM 질의(v3.9).
 
 ---
 
@@ -553,15 +438,15 @@ zsh 내프로젝트/scripts/nlm-sync.sh CLAUDE.md
 | v4.6 | 2026-02-21 | AI 관점 최적화: 다이어트(-22%) + alias + 스마트 로딩 |
 | v4.5 | 2026-02-21 | "기억하지 말고 기록하라": nlm + repomix 통합 |
 | v4.4 | 2026-02-21 | nlm 인증 만료 시 재인증 강제 |
-| v4.3 | 2026-02-20 | Phase 0 nlm 전 작업 강제 (Simple/Complex 분기 폐지) |
+| v4.3 | 2026-02-20 | Phase 0 nlm 전 작업 강제 |
 | v4.2 | 2026-02-20 | Phase 0 복잡도 기반 분기 (v4.3에서 폐지) |
 | v4.1 | 2026-02-20 | Phase 0 nlm query 강제 실행 |
-| **v4.0** | **2026-02-20** | **NotebookLM 자동 동기화**: Phase 6.5에 문서 커밋 후 nlm-sync.sh 자동 실행 |
-| **v3.9** | **2026-02-20** | **Phase 0 NotebookLM 질의**: 기술문서 직접 Read → nlm query 우선, fallback Read |
-| v3.8 | 2026-02-19 | 횡단 관심사 계층별 sweep Phase 5.9 |
-| v3.7 | 2026-02-15 | 사용자 여정 일관성 Phase 5.8 |
-| v3.6 | 2026-02-12 | 작업 완료 자동 commit & push Phase 6.5 |
-| v3.5 | 2026-02-12 | Source-Sink 정합성 (Phase 5.6) + 멱등성 원칙 (Phase 5.7) |
+| **v4.0** | **2026-02-20** | **NotebookLM 자동 동기화** |
+| **v3.9** | **2026-02-20** | **Phase 0 NotebookLM 질의** |
+| v3.8 | 2026-02-19 | 횡단 관심사 계층별 sweep |
+| v3.7 | 2026-02-15 | 사용자 여정 일관성 |
+| v3.6 | 2026-02-12 | 작업 완료 자동 commit & push |
+| v3.5 | 2026-02-12 | Source-Sink 정합성 + 멱등성 원칙 |
 | v3.4 | 2026-02-12 | 에이전트 수량 제한 전면 해제 |
 | v3.3 | 2026-02-12 | Agent 결과 교차 검증 강화 |
 | v3.2 | 2026-02-07 | Agent Teams 필수 판단 강제화 |

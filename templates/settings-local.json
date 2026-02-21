@@ -1,0 +1,39 @@
+{
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<PROJECT_PATH>/.claude/hooks/post-tool-format.sh \"$TOOL_NAME\" \"$FILE_PATH\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<PROJECT_PATH>/.claude/hooks/notify-user.sh '사용자 입력이 필요합니다' 'Claude Code'"
+          },
+          {
+            "type": "command",
+            "command": "<PROJECT_PATH>/.claude/hooks/safe-stop-hook.sh 50 60"
+          },
+          {
+            "type": "command",
+            "command": "bash <PROJECT_PATH>/scripts/conversation-sync.sh --latest --if-significant 2>/dev/null &"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)"
+    ]
+  }
+}
