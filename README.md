@@ -1,14 +1,24 @@
-# /autonomous v4.5
+# /autonomous v4.6
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
-> AEGIS + Ralph Loop + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화 + Agent Teams 필수 판단 + 자동 커밋 + NotebookLM + Repomix 통합
+> AEGIS + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화 + Agent Teams + 자동 커밋 + NotebookLM + Repomix 통합
 
 `/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.
 
 ---
 
 ## 최신 변경사항
+
+### v4.6: AI 관점 최적화 — 다이어트 + alias + 스마트 로딩 (2026-02-21)
+
+- **구조 다이어트**: 615줄 → 482줄 (-22%)
+  - Phase 5.6-5.9 압축: 102줄 → 12줄 (원칙+자가점검만, 상세는 CLAUDE.md 위임)
+  - Phase 9 랄프 루프: 78줄 → 2줄 (`/infinite-loop` 커맨드 참조)
+  - 기능 테이블: 20개 항목 → 5개 카테고리
+- **nlm alias 도입**: UUID 36자 반복 제거 → `nlm notebook query sm "..."` 형식
+- **Step 1.5 스마트 로딩**: `attach_packed_output` 우선(즉시) → `pack_codebase` 폴백
+- **5개 에이전트 경쟁 토론 기반**: 낙관론(현행 유지) vs 비판론(5가지 개선) 종합 판정
 
 ### v4.5: "기억하지 말고 기록하라" — nlm + repomix 컨텍스트 절약 통합 (2026-02-21)
 
