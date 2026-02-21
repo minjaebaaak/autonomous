@@ -1,4 +1,4 @@
-# /autonomous v4.7
+# /autonomous v4.9
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >

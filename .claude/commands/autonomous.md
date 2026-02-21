@@ -1,8 +1,8 @@
-# Autonomous Mode v4.8 - 범용 프레임워크
+# Autonomous Mode v4.9 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v4.8: Phase 0 nlm 강제 메커니즘 — "실행 지침"에 nlm을 첫 번째 행동으로 통합.
+> v4.9: Phase 0 PreToolUse 훅 강제 — nlm 완료 전 Read/Glob/Grep/Task 도구 자동 차단.
 
 ---
 
@@ -25,6 +25,7 @@ CLAUDE.md "Phase 확장 설정"에서 **Phase 0 NotebookLM** 항목을 찾는다
 **A) NotebookLM 설정이 있으면 (alias 또는 노트북 ID):**
 ```bash
 # 🔴 반드시 아래 Bash 명령을 실행할 것 (Read 도구로 기술문서 직접 읽기 금지)
+# 🔴 출력을 head/tail로 파이프하지 말 것 (Claude Code에서 사용 불가)
 export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
 nlm notebook query "<alias 또는 노트북ID>" "<작업 관련 질의>"
 
@@ -203,26 +204,29 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 
 주어진 작업: $ARGUMENTS
 
-### 🔴 STEP 0: nlm 질의 + 초기화 (차단 — 이 출력 없이 다음 단계 진행 금지)
+### 🔴 STEP 0: nlm 질의 + 초기화 (차단 — nlm 완료 전 다른 도구 자동 차단)
 
-아래 Bash 명령을 **즉시** 실행하세요:
+아래 Bash 명령을 실행하세요:
 ```bash
 mkdir -p ~/.claude/state && touch ~/.claude/state/AUTONOMOUS_MODE
 export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
 # CLAUDE.md "Phase 확장 설정"에서 nlm alias를 확인하여 아래 질의 실행
-nlm notebook query <alias> "[작업 관련 질의]"
+# 🔴 출력을 head/tail로 파이프하지 말 것 (Claude Code에서 사용 불가)
+# nlm 출력은 보통 10~40행입니다. 파이프 불필요.
+nlm notebook query <alias> "[작업 관련 질의]" && touch ~/.claude/state/PHASE0_COMPLETE
 ```
 
-nlm 실패 시: `nlm login` → 재시도. 재시도도 실패 시: Read 도구로 기술문서 직접 읽기.
+nlm 실패 시: `nlm login` → 재시도. 재시도도 실패 시:
+`touch ~/.claude/state/PHASE0_COMPLETE` 실행 후 Read 도구로 기술문서 직접 읽기.
 
-이 명령 실행 후 **반드시** 아래 형식 출력:
+이 명령의 결과를 확인한 후, 아래 형식을 출력하세요:
 ```
 ✅ Phase 0 완료 - 기술문서 확인됨
 관련 파일: [nlm 결과에서 추출]
 관련 규칙: [해당 규칙 번호]
 ```
 
-🔴 이 출력이 없으면 Explore/Read/다른 도구 사용 = Phase 0 미완료 = 규칙 위반.
+🔴 Phase 0 미완료 시 Read/Glob/Grep/Task 도구가 PreToolUse 훅에 의해 자동 차단됩니다.
 🔴 Phase 0 상세 절차는 상단 "Phase 0: MANDATORY PRE-CHECK" 섹션 참조.
 
 ### Phase 2: 📝 문서 업데이트 의무
@@ -526,4 +530,5 @@ touch ~/.claude/state/EMERGENCY_STOP
 **즉시 실행을 시작합니다.**
 
 🔴 **첫 번째 행동**: 위 "STEP 0: nlm 질의 + 초기화"의 Bash 명령을 실행하세요.
-Explore/Read/다른 도구보다 nlm이 먼저입니다.
+🔴 Phase 0 완료 전에는 Read/Glob/Grep/Task 도구가 훅에 의해 차단됩니다.
+🔴 nlm 성공 시 자동으로 게이트가 해제되며, 그 후 Explore/Read 사용 가능합니다.
