@@ -1,14 +1,25 @@
-# /autonomous v4.4
+# /autonomous v4.5
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
-> AEGIS + Ralph Loop + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화 + Agent Teams 필수 판단 + 자동 커밋 + NotebookLM 통합
+> AEGIS + Ralph Loop + Phase 0 강제 + 에이전트 결과 검증 + 문서 동기화 + 양방향 동기화 + Agent Teams 필수 판단 + 자동 커밋 + NotebookLM + Repomix 통합
 
 `/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.
 
 ---
 
 ## 최신 변경사항
+
+### v4.5: "기억하지 말고 기록하라" — nlm + repomix 컨텍스트 절약 통합 (2026-02-21)
+
+- **철학 도입**: "기억하지 말고 기록하라" — 컨텍스트 로드(기억) 대신 NotebookLM에 기록하고 검색
+- **Phase 0 Step 1.5 신설**: repomix `pack_codebase(compress: true)` 세션 스냅샷
+  - 세션 시작 시 1회 실행, outputId 재사용하여 `grep_repomix_output`으로 탐색
+  - CLAUDE.md "Phase 0 확장: repomix 설정"에서 패턴 참조
+- **컨텍스트 절약 규칙 섹션 신설**: 도구 선택 기준 테이블 + Read 3가지 허용 조건 + 질의 패턴
+- **Phase 6.5 확장**: 커밋 후 문서 동기화 + 코드 동기화(`repomix-sync.sh`) 트리거
+- **자동 활성화 기능**: `📦 repomix 세션 스냅샷` + `📏 Read 최소화` 2건 추가
+- **외부 실증**: TaxNavi 프로젝트에서 repomix+nlm 조합으로 "하루 종일 대화 압축 0회" 달성
 
 ### v4.4: nlm 인증 만료 시 재인증 강제 (2026-02-21)
 

@@ -1,8 +1,8 @@
-# Autonomous Mode v4.4 - 범용 프레임워크
+# Autonomous Mode v4.5 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v4.4: nlm 인증 만료 시 재인증 강제 (fallback 전 nlm login 필수).
+> v4.5: "기억하지 말고 기록하라" — nlm + repomix 컨텍스트 절약 통합.
 
 ---
 
@@ -56,6 +56,25 @@ nlm notebook query "<노트북ID>" "<작업 관련 질의>"
 ❌ "nlm 실패 → 직접 비교 진행" (재인증 시도 없이)
 ```
 
+**Step 1.5: repomix 세션 스냅샷 (MCP 도구 사용)** (설정 있을 때)
+
+CLAUDE.md "Phase 0 확장: repomix 설정"이 있으면 해당 설정으로 실행:
+```
+mcp__plugin_repomix-mcp_repomix__pack_codebase({
+  directory: "<프로젝트 루트>",
+  includePatterns: "<CLAUDE.md에서 지정한 패턴>",
+  ignorePatterns: "<CLAUDE.md에서 지정한 패턴>",
+  compress: true
+})
+```
+
+- 세션 시작 시 **1회만** 실행
+- 반환된 outputId를 세션 내내 재사용
+- 이후 코드 탐색은 `grep_repomix_output(outputId, pattern)`으로 수행
+- **🔴 Read 도구로 코드 파일 전체를 읽는 것 금지** (편집 직전 최소 범위만 허용)
+
+repomix 설정이 없으면 이 Step 건너뛰기.
+
 **Step 2: 관련 섹션 식별 및 출력** (필수)
 ```
 작업: [사용자 요청 요약]
@@ -86,6 +105,40 @@ nlm notebook query "<노트북ID>" "<작업 관련 질의>"
 1. **즉시 중단**
 2. **Phase 0으로 복귀**
 3. **기술문서 읽기부터 다시 시작**
+
+---
+
+## 🧠 컨텍스트 절약 규칙 — "기억하지 말고 기록하라"
+
+> **기억** = 컨텍스트에 로드 (시간, 에너지, 토큰 소모 → 압축으로 사라짐)
+> **기록** = NotebookLM에 업로드 (영구 보존)
+> **검색** = nlm query / grep_repomix_output (간단, 빠름, 저비용)
+
+### 도구 선택 기준
+
+| 목적 | 사용 도구 | 금지 |
+|------|---------|------|
+| 규칙/문서/설계 결정 확인 | `nlm notebook query` | ❌ Read 기술표/문서 전체 |
+| 코드 구조 파악 | `pack_codebase(compress)` → outputId | ❌ Read 여러 파일 순회 |
+| 코드 내 패턴 검색 | `grep_repomix_output` / Grep | ❌ Read 후 눈으로 검색 |
+| 파일 편집 | Read(offset, limit) → Edit | ❌ Read 전체 파일 |
+| 과거 구현/설계 확인 | `nlm notebook query` | ❌ git log 전체 조회 |
+
+### Read 도구 사용 조건 (3가지만 허용)
+
+1. **Edit/Write 직전** — 수정 범위만 (offset + limit 50~100줄)
+2. **repomix/grep으로 찾을 수 없는 특수 파일** — 설정 파일, JSON 등
+3. **특정 줄 번호를 이미 알 때** — offset + limit 최소 읽기
+
+### 질의 패턴 (개발 시작 전 반드시 실행)
+
+| 상황 | 질의 예시 |
+|------|-----------|
+| 새 기능 구현 전 | "XXX 관련 기존 구현이 있나?" |
+| 도메인 지식 필요 | "XXX의 요건/스펙은?" |
+| 과거 설계 결정 | "XXX를 왜 이렇게 결정했지?" |
+| 에러/이슈 해결 | "XXX 처리를 어떻게 했었지?" |
+| 세션 이월 (컨텍스트 복원) | "지난 세션에서 작업하던 XXX 진행 상황은?" |
 
 ---
 
@@ -122,6 +175,8 @@ nlm notebook query "<노트북ID>" "<작업 관련 질의>"
 | **🔄 랄프 루프** | 목표 달성까지 무한 반복 (최대 10회) | ✅ 자동 |
 | **🔄 작업 완료 자동 커밋** | 작업 완료 시 자동 git commit & push | ✅ 강제 (v3.6) |
 | **📓 NotebookLM 질의** | Phase 0 **모든** 작업에서 nlm query 강제 (설정 있을 때) | ✅ 강제 (v4.3) |
+| **📦 repomix 세션 스냅샷** | Phase 0 Step 1.5에서 pack_codebase(compress) 실행 | ✅ 강제 (v4.5) |
+| **📏 Read 최소화** | Read 도구는 편집 직전 최소 범위만 허용 | ✅ 강제 (v4.5) |
 
 ---
 
@@ -422,7 +477,8 @@ Grep으로 확인하면 방지 가능. (v5.41 핫픽스 #5: 14곳 보고 → 실
 4. git push
 5. 커밋 결과 출력
 6. 🔴 NotebookLM 동기화 (CLAUDE.md Phase 확장에 NotebookLM 설정 있을 때):
-   - 커밋에 포함된 문서 중 NotebookLM 소스 해당 파일 → nlm-sync.sh 실행
+   - **문서 동기화**: 커밋에 포함된 문서 중 NotebookLM 소스 해당 파일 → `nlm-sync.sh <파일>` 실행
+   - **코드 동기화**: 코드 변경이 있으면 → `repomix-sync.sh` 실행 (코드 스냅샷 재생성 + 업로드)
    - nlm 실패 시 경고만 출력 (커밋 완료됨, 블로커 아님)
 ```
 
