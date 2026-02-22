@@ -26,7 +26,7 @@
 - includePatterns: `backend/app/**/*.py,frontend/app/**/*.tsx,frontend/lib/**/*.ts,frontend/components/**/*.tsx`
 - ignorePatterns: `node_modules/**,venv/**,__pycache__/**,.next/**,*.pyc`
 - compress: true (항상)
-- 출력 디렉토리: `docs/repomix/` (attach_packed_output 우선 사용)
+- 출력 디렉토리: 프로젝트 루트 (attach_packed_output 우선 사용)
 
 ## Phase 0 확장: 대화 동기화 (v4.7)
 
