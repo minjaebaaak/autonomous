@@ -1,8 +1,8 @@
-# /autonomous v4.9
+# /autonomous v5.0
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
-> `/autonomous [작업]` 하나로 AEGIS 검증, NotebookLM 통합, 문서 동기화, Agent Teams, 자동 커밋이 모두 적용됩니다.
+> `/autonomous [작업]` 하나로 검증, NotebookLM 통합, 문서 동기화, Agent Teams, 자동 커밋이 모두 적용됩니다.
 
 ---
 
@@ -47,7 +47,7 @@ curl -o ~/.claude/CLAUDE.md \
 ```
 ~/.claude/
 ├── commands/
-│   └── autonomous.md          # v4.7 범용 프레임워크 (SSOT)
+│   └── autonomous.md          # v5.0 범용 프레임워크 (SSOT)
 ├── CLAUDE.md                  # 전역 규칙 (한국어, 양방향 동기화)
 ├── settings.json              # 전역 훅 설정
 ├── state/
@@ -202,14 +202,14 @@ zsh 내프로젝트/scripts/nlm-sync.sh CLAUDE.md
 | **Phase 2** | 문서 업데이트 | 코드 변경 후 기술문서 업데이트 (CLAUDE.md 매핑 참조) |
 | **Phase 3** | autonomous 동기화 | autonomous.md 변경 시 전역 + 레포 동기화 |
 | **Phase 3.5** | 양방향 동기화 | 프로젝트 교훈 범용화, CLAUDE.md Phase 확장 백업 |
-| **Phase 4** | AEGIS 인지 레이어 | ultrathink, Sequential Thinking, TodoWrite |
+| **Phase 4** | 심층 분석 레이어 | ultrathink, Sequential Thinking, TodoWrite |
 | **Phase 4.5** | Agent Teams 필수 판단 | 매 작업마다 팀원 필요 여부 판단 + 출력 의무 |
 | **Phase 5** | 자율 실행 | 사용자 의도 확인, 모호성 즉시 확인 |
 | **Phase 5.5** | 에이전트 검증 | 에이전트 결과 원본 대조 |
 | **Phase 5.6~5.9** | 정합성 검증 | Source-Sink, 멱등성, 사용자 여정, 횡단 관심사 |
 | **Phase 6** | 커밋 전 문서 확인 | 문서 업데이트 없이 커밋 금지 |
 | **Phase 6.5** | 자동 커밋 & 동기화 | commit & push + NotebookLM 자동 동기화 |
-| **Phase 7** | AEGIS 검증 | 빌드 검증, 배포, 프로덕션 확인 |
+| **Phase 7** | 검증 | 빌드 검증, 배포, 프로덕션 확인 |
 | **Phase 8** | 피드백 루프 | 검증 실패 시 자동 수정 (최대 3회) |
 | **Phase 9** | 랄프 루프 | 목표 달성까지 무한 반복 (최대 10회) |
 
@@ -347,7 +347,7 @@ autonomous 생태계는 4계층으로 지식을 관리합니다. 각 계층은 �
 | 카테고리 | 포함 기능 | 상태 |
 |---------|---------|------|
 | **컨텍스트 보존** | nlm 질의, repomix 스냅샷, Read 최소화, 대화 자동 동기화 | ✅ v4.7 |
-| **검증 체계** | AEGIS Protocol, 피드백 루프, Agent 교차 검증, 랄프 루프 | ✅ v3.3 |
+| **검증 체계** | 검증 프로토콜, 피드백 루프, Agent 교차 검증, 랄프 루프 | ✅ v3.3 |
 | **문서 동기화** | 기술문서 참조, 문서 업데이트, 커밋 전 확인, 양방향 동기화 | ✅ v3.0 |
 | **자율 실행** | ultrathink, Sequential Thinking, TodoWrite, Teams 필수 판단 | ✅ v3.3 |
 | **커밋 & 배포** | 자동 커밋 & 푸시, NotebookLM 동기화 | ✅ v4.5 |
@@ -416,6 +416,9 @@ autonomous.md (범용, 전역)
 
 ## 최신 변경사항
 
+### v5.0 (2026-02-23)
+검증 용어 정규화 + CLAUDE.md 참조 정규화. AEGIS 용어 완전 제거, 깨진 번호 참조 → 섹션명/스킬 경로로 교체.
+
 ### v4.7 (2026-02-21)
 대화 → NotebookLM 자동 동기화 + 카테고리별 노트북 분리. conversation-sync.sh 신규, 3분류(rules/conv/tech), 로컬 인덱스, Stop 훅 자동 트리거.
 
@@ -434,7 +437,8 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v4.7** | **2026-02-21** | **대화 자동 동기화 + 카테고리별 노트북**: conversation-sync.sh + 3분류(rules/conv/tech) + 로컬 인덱스 |
+| **v5.0** | **2026-02-23** | **검증 용어 정규화**: AEGIS 완전 제거, CLAUDE.md 번호 참조 → 섹션명/스킬 경로 교체 |
+| v4.7 | 2026-02-21 | 대화 자동 동기화 + 카테고리별 노트북: conversation-sync.sh + 3분류(rules/conv/tech) + 로컬 인덱스 |
 | v4.6 | 2026-02-21 | AI 관점 최적화: 다이어트(-22%) + alias + 스마트 로딩 |
 | v4.5 | 2026-02-21 | "기억하지 말고 기록하라": nlm + repomix 통합 |
 | v4.4 | 2026-02-21 | nlm 인증 만료 시 재인증 강제 |
@@ -459,7 +463,7 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 | v2.5 | 2026-02-04 | autonomous.md 자동 커밋 & 푸시 |
 | v2.2 | 2026-01-19 | 랄프 루프 완전 통합 |
 | v2.1 | 2026-01-19 | 랄프 루프 기본 추가 |
-| v2.0 | 2026-01-19 | AEGIS Protocol 통합 |
+| v2.0 | 2026-01-19 | 검증 프로토콜 통합 |
 
 ---
 

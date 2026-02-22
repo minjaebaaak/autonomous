@@ -2,29 +2,39 @@
 
 > ShareManager 프로젝트의 CLAUDE.md에 포함된 Phase 확장 섹션의 백업/템플릿입니다.
 > 실제 운영본: `sharemanager/CLAUDE.md` 하단의 "/autonomous Phase 확장 설정" 섹션
-> 백업 날짜: 2026-02-15
+> 백업 날짜: 2026-02-23
 
 ---
 
 ## Phase 0 확장: 기술문서
 
-| 문서 | 경로 | 용도 |
-|------|------|------|
-| **기술표 (메인)** | `docs/technical-reference.html` | 파일/함수/의존성/상태 전체 참조 |
-| **프로젝트 문서** | `PROJECT_DOCUMENTATION.md` | 프로젝트 구조 SSOT |
+- `docs/technical-reference.html` + `PROJECT_DOCUMENTATION.md`
+- 기술표 섹션 가이드는 `/checklist-bug` 참조
 
-## Phase 0 확장: 섹션 매핑
+## Phase 0 확장: NotebookLM (카테고리별 노트북 v4.7)
 
-| 작업 유형 | 참조 섹션 |
-|----------|---------|
-| 파워링크/브랜드 콘텐츠/VIEW/뉴스 | **A. SERP 수집** |
-| 네이버 로그인/세션/쿠키 | **B. 로그인/세션** |
-| 자사 콘텐츠 표시/소유권 | **C. 소유권 감지** |
-| 스크래핑/OCR/LLM 분석 | **D. 콘텐츠 분석** |
-| 스케줄러/알림/배치 | **E. 모니터링** |
-| 경쟁사 기능 | **F. 경쟁사 분석** |
-| UI 페이지/버그 | **G. 프론트엔드** |
-| 전체 구조 이해 | **H. 아키텍처** |
+- 규칙: `nlm notebook query sm-rules "..."` (= `139b4dd6-a8e2-448d-86b7-f3c4f572e24b`)
+- 대화: `nlm notebook query sm-conv "..."` (= `65e68fc7-a8ff-43a9-b9f9-19566cbd2709`)
+- 기술: `nlm notebook query sm-tech "..."` (= `8502add4-4166-459e-8a8f-3fdcec505215`)
+- sm alias = sm-rules (하위 호환)
+- 문서 동기화: `bash scripts/nlm-sync.sh <파일>` (카테고리 자동 분류)
+- 대화 동기화: `bash scripts/conversation-sync.sh` → sm-conv
+- 로컬 인덱스: `~/.claude/conversation-index.json` (캐시 + 보완)
+
+## Phase 0 확장: repomix 설정
+
+- includePatterns: `backend/app/**/*.py,frontend/app/**/*.tsx,frontend/lib/**/*.ts,frontend/components/**/*.tsx`
+- ignorePatterns: `node_modules/**,venv/**,__pycache__/**,.next/**,*.pyc`
+- compress: true (항상)
+- 출력 디렉토리: `docs/repomix/` (attach_packed_output 우선 사용)
+
+## Phase 0 확장: 대화 동기화 (v4.7)
+
+- 세션 JSONL: `~/.claude/projects/-Users-minjaebaak-Desktop-Develop-project-sharemanager/*.jsonl`
+- Stop 훅: 세션 종료 시 자동 업로드 (10턴+, 5KB+ 조건)
+- 수동 동기화: `bash scripts/conversation-sync.sh --title "<작업명>"`
+- 노트 네이밍: `{타이틀}-{YYYY-MM-DD}-{순번}-{HHMM}` (크기 기반 멀티 노트)
+- 타이틀: `--title` 미지정 시 첫 사용자 메시지에서 주제 자동 추출
 
 ## Phase 2 확장: 파일→문서 매핑
 

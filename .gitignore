@@ -1,4 +1,4 @@
-# AEGIS Protocol .gitignore
+# autonomous .gitignore
 
 # Node.js
 node_modules/
@@ -13,7 +13,7 @@ build/
 .env
 .env.local
 .env.production
-aegis.config.js  # 실제 설정 파일은 커밋하지 않음
+*.config.js  # 실제 설정 파일은 커밋하지 않음
 
 # Logs
 logs/
