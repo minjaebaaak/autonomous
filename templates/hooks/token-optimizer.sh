@@ -44,23 +44,32 @@ check_session_size() {
     fi
 }
 
-# === 1.5. 핸드오프 노트 감지 (v5.4: 디렉토리 기반) ===
+# === 1.5. 핸드오프 노트 감지 (v5.4.2: 프로젝트 필터링 추가) ===
 check_handoff() {
     local handoff_dir="$HOME/.claude/state/handoffs"
     local count=0
+    local last_file=""
 
     if [ -d "$handoff_dir" ]; then
-        count=$(ls "$handoff_dir"/handoff-*.md 2>/dev/null | wc -l | tr -d ' ')
+        # 프로젝트 필터링: 현재 $PWD와 일치하는 핸드오프만 카운트
+        for f in "$handoff_dir"/handoff-*.md; do
+            [ -f "$f" ] || continue
+            local proj=$(grep "^- project:" "$f" 2>/dev/null | sed 's/^- project: //')
+            if [ -z "$proj" ] || [ "$proj" = "$PWD" ]; then
+                count=$((count + 1))
+                last_file="$f"
+            fi
+        done
     fi
 
     if [ "$count" -eq 1 ]; then
-        local task=$(grep "^- task:" "$handoff_dir"/handoff-*.md 2>/dev/null | head -1 | sed 's/.*- task: //')
+        local task=$(grep "^- task:" "$last_file" 2>/dev/null | sed 's/^- task: //')
         echo "📋 [HANDOFF] 이전 세션 작업 발견: ${task:-알 수 없음}. /autonomous 로 자동 재개 가능."
     elif [ "$count" -gt 1 ]; then
         echo "📋 [HANDOFF] 이전 세션 작업 ${count}건 발견. /autonomous 로 선택 재개 가능."
     fi
 
-    # 레거시 호환: v5.3 싱글톤 파일도 감지
+    # 레거시 호환: v5.3 싱글톤 파일도 감지 (프로젝트 필터링 불가)
     local legacy="$HOME/.claude/state/session-handoff.md"
     if [ -f "$legacy" ]; then
         local task=$(grep "^- task:" "$legacy" | sed 's/^- task: //')
