@@ -90,13 +90,16 @@ repomix 설정이 없으면 이 Step 건너뛰기.
 
 `~/.claude/state/handoffs/` 디렉토리를 스캔:
 
-**레거시 마이그레이션**: `~/.claude/state/session-handoff.md`가 존재하면
-`handoffs/` 디렉토리로 이동 후 진행.
+**레거시 마이그레이션**: `~/.claude/state/session-handoff.md`가 존재하면:
+```bash
+mkdir -p ~/.claude/state/handoffs/
+mv ~/.claude/state/session-handoff.md ~/.claude/state/handoffs/handoff-legacy-$(date +%s).md
+```
 
-**각 파일별 검증 (3단계)**:
+**각 파일별 검증 (3단계, 순서대로)**:
 1. 타임스탬프 확인 → 24시간 초과 시 삭제 후 건너뛰기
-2. project 경로 vs 현재 `$PWD` 대조 → 불일치 시 무시 (삭제 안 함)
-3. `$ARGUMENTS` 확인 → 인자가 있으면 (새 작업) 전부 무시 + 삭제
+2. project 경로 vs 현재 `$PWD` 대조 → 불일치 시 무시 (삭제 안 함, 다른 프로젝트용)
+3. `$ARGUMENTS` 확인 → 인자가 있으면 (새 작업) **현재 프로젝트 매칭 핸드오프만** 삭제
 
 **유효 파일 수에 따른 분기**:
 - **0건**: 건너뛰기
@@ -210,7 +213,7 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 **Claude의 행동**:
 1. 현재 원자적 작업 완료 (진행 중인 Edit/커밋 마무리)
 2. 🔴 핸드오프 노트 작성 (디렉토리 기반 — 멀티세션 안전):
-   - 디렉토리: `~/.claude/state/handoffs/`
+   - `mkdir -p ~/.claude/state/handoffs/` (Bash, 디렉토리 미존재 방어)
    - 파일명: `handoff-{unix_timestamp}-{random_4hex}.md`
    ```
    # Session Handoff
