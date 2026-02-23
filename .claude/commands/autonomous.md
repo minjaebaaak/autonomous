@@ -1,4 +1,4 @@
-# Autonomous Mode v5.4 - 범용 프레임워크
+# Autonomous Mode v5.4.1 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
@@ -540,6 +540,11 @@ autonomous 레포/
 7. 🔴 대화 동기화 (Stop 훅이 자동 처리 — 수동 불필요)
    - 세션 종료 시 Stop 훅이 conversation-sync.sh 자동 실행
    - 수동 필요 시: `bash scripts/conversation-sync.sh --title "<작업명>"`
+8. 🔴 자율 모드 정리 (v5.4.1 — 모든 작업 완료 후 반드시 실행):
+   rm -f ~/.claude/state/AUTONOMOUS_MODE
+   rm -f ~/.claude/state/PHASE0_COMPLETE
+   # → Stop 훅이 exit 0 반환 → 세션 정상 종료
+   # ⚠️ 미실행 시 Stop 훅 무한 루프 (exit 2 반복)
 ```
 
 **절대 금지**:
@@ -547,6 +552,7 @@ autonomous 레포/
 ❌ "커밋할까요?" / "커밋이 필요하시면 말씀해 주세요" 질문
 ❌ 작업 완료 후 커밋 없이 종료
 ❌ 커밋만 하고 푸시 생략
+❌ AUTONOMOUS_MODE 파일 삭제 없이 세션 종료 (Stop 훅 무한 루프 유발)
 ```
 
 **자가 점검** (RALPH_DONE 출력 전):
@@ -554,6 +560,10 @@ autonomous 레포/
 "커밋 & 푸시를 완료했나?"
   → 아니면 Phase 6.5 미완료
   → RALPH_DONE 출력 금지
+
+"AUTONOMOUS_MODE 파일을 삭제했나?"
+  → 아니면 Stop 훅이 무한 루프
+  → rm -f ~/.claude/state/AUTONOMOUS_MODE 실행
 ```
 
 ### Phase 7: 검증 (완료 후 자동)
@@ -601,5 +611,5 @@ touch ~/.claude/state/EMERGENCY_STOP
 **즉시 실행을 시작합니다.**
 
 🔴 **첫 번째 행동**: 위 "STEP 0: nlm 질의 + 초기화"의 Bash 명령을 실행하세요.
-🔴 Phase 0 완료 전에는 Read/Glob/Grep/Task 도구가 훅에 의해 차단됩니다.
+🔴 Phase 0 완료 전에는 Read/Glob/Grep/Task 도구가 훅에 의해 자동 차단됩니다.
 🔴 nlm 성공 시 자동으로 게이트가 해제되며, 그 후 Explore/Read 사용 가능합니다.
