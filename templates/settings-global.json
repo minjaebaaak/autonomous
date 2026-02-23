@@ -1,0 +1,27 @@
+{
+  "// 설명": "전역 ~/.claude/settings.json에 병합할 훅 설정 템플릿",
+  "// 설치": "이 파일의 hooks 섹션을 ~/.claude/settings.json에 추가하세요",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/token-optimizer.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-report.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

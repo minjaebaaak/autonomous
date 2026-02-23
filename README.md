@@ -8,14 +8,22 @@
 
 ## Quick Start
 
-### 3줄 설치
+### 기본 설치
 
 ```bash
+# 1. autonomous.md + CLAUDE.md (필수)
 mkdir -p ~/.claude/commands
 curl -o ~/.claude/commands/autonomous.md \
   https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/commands/autonomous.md
 curl -o ~/.claude/CLAUDE.md \
   https://raw.githubusercontent.com/minjaebaaak/autonomous/master/.claude/CLAUDE.md
+
+# 2. 필수 훅 (autonomous Phase 0/9 동작에 필요)
+mkdir -p ~/.claude/hooks
+curl -o ~/.claude/hooks/token-optimizer.sh \
+  https://raw.githubusercontent.com/minjaebaaak/autonomous/master/templates/hooks/token-optimizer.sh
+chmod +x ~/.claude/hooks/token-optimizer.sh
+# → ~/.claude/settings.json에 UserPromptSubmit 훅 등록 (templates/settings-global.json 참조)
 ```
 
 ### 사용
@@ -72,7 +80,12 @@ your-project/
 │   ├── settings.local.json    # 프로젝트별 훅 설정
 │   └── hooks/
 │       ├── notify-user.sh     # 사용자 알림
-│       └── safe-stop-hook.sh  # 무한루프 방지
+│       ├── safe-stop-hook.sh  # 무한루프 방지
+│       ├── phase0-gate.sh     # Phase 0 도구 차단 (필수)
+│       ├── pre-bash-check.sh  # 위험 명령 차단 (선택)
+│       ├── reset-session.sh   # 상태 파일 정리 (선택)
+│       ├── check-status.sh    # stop-hook 상태 확인 (선택)
+│       └── code-pattern-check.sh  # 안티패턴 감지 (선택)
 ├── scripts/
 │   ├── nlm-sync.sh            # 문서 → NotebookLM 동기화
 │   ├── repomix-sync.sh        # 코드 → NotebookLM 동기화
@@ -95,11 +108,23 @@ autonomous/
 │   ├── nlm-sync.sh
 │   ├── repomix-sync.sh
 │   ├── conversation-sync.sh
-│   ├── settings-local.json
+│   ├── settings-local.json    # 프로젝트 훅 설정 (PreToolUse + PostToolUse + Stop)
+│   ├── settings-global.json   # 전역 훅 설정 (UserPromptSubmit + Stop)
 │   ├── claude-md-notebooklm-phase.md
-│   └── hooks/
-│       ├── notify-user.sh
-│       └── safe-stop-hook.sh
+│   ├── commands/              # 슬래시 커맨드 템플릿
+│   │   ├── infinite-loop.md   # Phase 9 Ralph Loop (필수)
+│   │   ├── feedback-loop.md   # Phase 8 피드백 루프 (선택)
+│   │   └── commit.md          # 스마트 커밋 (선택)
+│   └── hooks/                 # 훅 스크립트 템플릿
+│       ├── token-optimizer.sh # Phase 0 트리거 + 세션 모니터링 (필수, 전역)
+│       ├── phase0-gate.sh     # Phase 0 도구 차단 (필수, 프로젝트)
+│       ├── notify-user.sh     # 사용자 알림 (선택)
+│       ├── safe-stop-hook.sh  # 무한루프 방지 (선택)
+│       ├── session-report.sh  # 세션 리포트 (선택, 전역)
+│       ├── reset-session.sh   # 상태 정리 (선택)
+│       ├── pre-bash-check.sh  # 위험 명령 차단 (선택)
+│       ├── check-status.sh    # stop-hook 상태 확인 (선택)
+│       └── code-pattern-check.sh  # 안티패턴 감지 틀 (선택)
 ├── projects/                  # 프로젝트별 교훈 아카이브
 │   └── sharemanager/
 └── README.md
@@ -164,15 +189,33 @@ curl -o ~/.claude/CLAUDE.md \
 
 프로젝트에 복사하여 사용하는 스크립트/설정 템플릿입니다. 상단 "프로젝트별 수정 영역"만 편집하면 됩니다.
 
-| 템플릿 | 경로 | 설명 |
-|--------|------|------|
-| **nlm-sync.sh** | [`templates/nlm-sync.sh`](templates/nlm-sync.sh) | 문서 → NotebookLM 동기화 (파일별 노트북 자동 라우팅) |
-| **repomix-sync.sh** | [`templates/repomix-sync.sh`](templates/repomix-sync.sh) | 코드 묶음 재생성 + NotebookLM 업로드 파이프라인 |
-| **conversation-sync.sh** | [`templates/conversation-sync.sh`](templates/conversation-sync.sh) | 세션 대화 → NotebookLM 자동 동기화 (v4.7) |
-| **settings-local.json** | [`templates/settings-local.json`](templates/settings-local.json) | 프로젝트 훅 설정 (`<PROJECT_PATH>` 교체) |
-| **CLAUDE.md Phase 확장** | [`templates/claude-md-notebooklm-phase.md`](templates/claude-md-notebooklm-phase.md) | CLAUDE.md에 붙이는 Phase 확장 템플릿 |
-| **notify-user.sh** | [`templates/hooks/notify-user.sh`](templates/hooks/notify-user.sh) | macOS/Linux 사용자 알림 훅 |
-| **safe-stop-hook.sh** | [`templates/hooks/safe-stop-hook.sh`](templates/hooks/safe-stop-hook.sh) | Ralph Loop 무한루프 방지 안전장치 |
+### 필수 템플릿 (autonomous 핵심 동작에 필요)
+
+| 템플릿 | 경로 | 설치 위치 | 설명 |
+|--------|------|----------|------|
+| **token-optimizer.sh** | [`templates/hooks/token-optimizer.sh`](templates/hooks/token-optimizer.sh) | 전역 `~/.claude/hooks/` | Phase 0 트리거 + 세션 크기 모니터링 + 핸드오프 감지 |
+| **phase0-gate.sh** | [`templates/hooks/phase0-gate.sh`](templates/hooks/phase0-gate.sh) | 프로젝트 `.claude/hooks/` | Phase 0 미완료 시 도구 차단 (PreToolUse) |
+| **infinite-loop.md** | [`templates/commands/infinite-loop.md`](templates/commands/infinite-loop.md) | 전역 `~/.claude/commands/` | Phase 9 Ralph Loop 커맨드 |
+| **settings-global.json** | [`templates/settings-global.json`](templates/settings-global.json) | 전역 `~/.claude/settings.json`에 병합 | 전역 훅 설정 (UserPromptSubmit + Stop) |
+| **settings-local.json** | [`templates/settings-local.json`](templates/settings-local.json) | 프로젝트 `.claude/` | 프로젝트 훅 설정 (PreToolUse + PostToolUse + Stop) |
+
+### 선택 템플릿 (편의/안전성 향상)
+
+| 템플릿 | 경로 | 설치 위치 | 설명 |
+|--------|------|----------|------|
+| **nlm-sync.sh** | [`templates/nlm-sync.sh`](templates/nlm-sync.sh) | 프로젝트 `scripts/` | 문서 → NotebookLM 동기화 |
+| **repomix-sync.sh** | [`templates/repomix-sync.sh`](templates/repomix-sync.sh) | 프로젝트 `scripts/` | 코드 묶음 + NotebookLM 업로드 |
+| **conversation-sync.sh** | [`templates/conversation-sync.sh`](templates/conversation-sync.sh) | 프로젝트 `scripts/` | 대화 → NotebookLM 동기화 (v4.7) |
+| **CLAUDE.md Phase 확장** | [`templates/claude-md-notebooklm-phase.md`](templates/claude-md-notebooklm-phase.md) | CLAUDE.md 하단에 추가 | Phase 확장 설정 템플릿 |
+| **notify-user.sh** | [`templates/hooks/notify-user.sh`](templates/hooks/notify-user.sh) | 프로젝트 `.claude/hooks/` | macOS/Linux 사용자 알림 |
+| **safe-stop-hook.sh** | [`templates/hooks/safe-stop-hook.sh`](templates/hooks/safe-stop-hook.sh) | 프로젝트 `.claude/hooks/` | Ralph Loop 무한루프 방지 |
+| **session-report.sh** | [`templates/hooks/session-report.sh`](templates/hooks/session-report.sh) | 전역 `~/.claude/hooks/` | 세션 종료 크기/상태 리포트 |
+| **reset-session.sh** | [`templates/hooks/reset-session.sh`](templates/hooks/reset-session.sh) | 프로젝트 `.claude/hooks/` | 상태 파일 일괄 정리 (수동 실행) |
+| **pre-bash-check.sh** | [`templates/hooks/pre-bash-check.sh`](templates/hooks/pre-bash-check.sh) | 프로젝트 `.claude/hooks/` | 위험 Bash 명령 차단 |
+| **check-status.sh** | [`templates/hooks/check-status.sh`](templates/hooks/check-status.sh) | 프로젝트 `.claude/hooks/` | stop-hook 상태 확인 (수동 실행) |
+| **code-pattern-check.sh** | [`templates/hooks/code-pattern-check.sh`](templates/hooks/code-pattern-check.sh) | 프로젝트 `.claude/hooks/` | 안티패턴 감지 (빈 틀, 패턴 직접 정의) |
+| **feedback-loop.md** | [`templates/commands/feedback-loop.md`](templates/commands/feedback-loop.md) | 전역 `~/.claude/commands/` | Phase 8 피드백 루프 (검증 명령 교체 필요) |
+| **commit.md** | [`templates/commands/commit.md`](templates/commands/commit.md) | 전역 `~/.claude/commands/` | 스마트 커밋 커맨드 |
 
 ### 템플릿 사용법
 
@@ -418,6 +461,9 @@ autonomous.md (범용, 전역)
 
 ## 최신 변경사항
 
+### v5.4.1 (2026-02-23)
+레포 완전성 보완: 필수 훅/커맨드 템플릿 추가 (token-optimizer.sh, phase0-gate.sh, infinite-loop.md). 선택 템플릿 7개 추가. settings-global.json 신규. settings-local.json에 PreToolUse 추가. aegis.json.template 레거시 제거.
+
 ### v5.4 (2026-02-23)
 멀티세션 핸드오프: 싱글톤 `session-handoff.md` → 디렉토리 기반 `handoffs/handoff-{ts}-{rand}.md`. 동시 세션 간 덮어쓰기 방지. 다건 감지 시 목록 표시 → 사용자 선택. 레거시 싱글톤 하위 호환.
 
@@ -451,6 +497,7 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
+| **v5.4.1** | **2026-02-23** | **레포 완전성**: 필수 훅 3개 + 선택 7개 + settings-global.json + commands/ 템플릿 추가. aegis 레거시 제거 |
 | **v5.4** | **2026-02-23** | **멀티세션 핸드오프**: 디렉토리 기반 `handoffs/` (동시 세션 덮어쓰기 방지, 다건 선택 재개, 레거시 호환) |
 | v5.3 | 2026-02-23 | 핸드오프 노트: 세션 간 자동 작업 이어받기 (session-handoff.md + Step 1.6 + check_handoff) |
 | v5.2 | 2026-02-23 | 세션 전환 전략: compaction 대신 새 세션 + nlm 복원 |

@@ -1,6 +1,26 @@
 {
   "enableAllProjectMcpServers": true,
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<PROJECT_PATH>/.claude/hooks/pre-bash-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob|Grep|Task|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<PROJECT_PATH>/.claude/hooks/phase0-gate.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
