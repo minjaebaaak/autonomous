@@ -1,19 +1,8 @@
 #!/bin/bash
 # ==============================================================================
-# Stop Hook 세션 리셋 - 새 세션 시작 전 상태 파일 일괄 정리
+# Stop Hook 세션 리셋 (v2.3 - CONTEXT_WARNING 정리 추가)
 # ==============================================================================
-# 목적: 이전 세션의 상태 파일을 정리하여 깨끗한 상태로 시작
-#
-# 정리 대상:
-#   - stop-hook-state.json (safe-stop-hook 상태)
-#   - stop-hook.lock (잠금 파일)
-#   - EMERGENCY_STOP (긴급 중단)
-#   - AUTONOMOUS_MODE (자율 모드)
-#   - rapid-fire.json (rapid-fire 감지)
-#   - notify-throttle (알림 쓰로틀)
-#   - PHASE0_COMPLETE (Phase 0 완료)
-#   - no-tracker-count (no-tracker 카운터)
-#   - TASK_COMPLETE (작업 완료 신호)
+# 새로운 자율 작업 세션을 시작하기 전에 실행
 #
 # 설치:
 #   cp templates/hooks/reset-session.sh <PROJECT>/.claude/hooks/
@@ -30,7 +19,7 @@ AUTONOMOUS_MODE="${STATE_DIR}/AUTONOMOUS_MODE"
 RAPID_FIRE_FILE="${STATE_DIR}/rapid-fire.json"
 
 echo "========================================"
-echo " Stop Hook 세션 리셋"
+echo " Stop Hook 세션 리셋 (v2.2)"
 echo "========================================"
 
 # 상태 파일 삭제
@@ -91,7 +80,7 @@ else
     echo " [--] Phase 0 완료 파일 없음"
 fi
 
-# No-tracker 카운터 삭제
+# v4.1: No-tracker 카운터 삭제
 NO_TRACKER_COUNT="${STATE_DIR}/no-tracker-count"
 if [ -f "$NO_TRACKER_COUNT" ]; then
     rm "$NO_TRACKER_COUNT"
@@ -100,13 +89,22 @@ else
     echo " [--] No-tracker 카운터 없음"
 fi
 
-# TASK_COMPLETE 신호 파일 삭제
+# v4.1: TASK_COMPLETE 신호 파일 삭제
 TASK_COMPLETE="${STATE_DIR}/TASK_COMPLETE"
 if [ -f "$TASK_COMPLETE" ]; then
     rm "$TASK_COMPLETE"
     echo " [OK] TASK_COMPLETE 신호 파일 삭제됨"
 else
     echo " [--] TASK_COMPLETE 신호 파일 없음"
+fi
+
+# v5.4.3: CONTEXT_WARNING 파일 삭제
+CONTEXT_WARNING="${STATE_DIR}/CONTEXT_WARNING"
+if [ -f "$CONTEXT_WARNING" ]; then
+    rm "$CONTEXT_WARNING"
+    echo " [OK] Context 경고 파일 삭제됨"
+else
+    echo " [--] Context 경고 파일 없음"
 fi
 
 # 로그 백업 (최근 500줄만 유지)
