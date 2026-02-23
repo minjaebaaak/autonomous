@@ -1,4 +1,4 @@
-# /autonomous v5.2
+# /autonomous v5.3
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -47,11 +47,12 @@ curl -o ~/.claude/CLAUDE.md \
 ```
 ~/.claude/
 ├── commands/
-│   └── autonomous.md          # v5.1 범용 프레임워크 (SSOT)
+│   └── autonomous.md          # v5.3 범용 프레임워크 (SSOT)
 ├── CLAUDE.md                  # 전역 규칙 (한국어, 양방향 동기화)
 ├── settings.json              # 전역 훅 설정
 ├── state/
 │   ├── AUTONOMOUS_MODE        # 자율 모드 활성 플래그
+│   ├── session-handoff.md     # 핸드오프 노트 (세션 간 작업 이어받기)
 │   └── EMERGENCY_STOP         # 긴급 중단 (touch로 생성)
 ├── conversation-index.json    # 대화 동기화 인덱스
 └── projects/
@@ -416,6 +417,9 @@ autonomous.md (범용, 전역)
 
 ## 최신 변경사항
 
+### v5.3 (2026-02-23)
+핸드오프 노트 메커니즘: 세션 종료 시 `~/.claude/state/session-handoff.md` 작성 → 다음 세션 Phase 0 Step 1.6에서 자동 감지 + 작업 재개. 3단계 검증(TTL/프로젝트/인자). token-optimizer.sh에 `check_handoff()` 추가.
+
 ### v5.2 (2026-02-23)
 세션 전환 전략 추가: compaction 대신 새 세션 + nlm 복원. 20MB+ 경고 시 작업 마무리 후 세션 종료 권장.
 
@@ -443,7 +447,8 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v5.2** | **2026-02-23** | **세션 전환 전략**: compaction 대신 새 세션 + nlm 복원 |
+| **v5.3** | **2026-02-23** | **핸드오프 노트**: 세션 간 자동 작업 이어받기 (session-handoff.md + Step 1.6 + check_handoff) |
+| v5.2 | 2026-02-23 | 세션 전환 전략: compaction 대신 새 세션 + nlm 복원 |
 | v5.1 | 2026-02-23 | 로직 개선: Phase 9 종료 조건 명시 + Phase 2/6.5 역할 명확화 |
 | v5.0 | 2026-02-23 | 검증 용어 정규화: AEGIS 완전 제거, CLAUDE.md 번호 참조 → 섹션명/스킬 경로 교체 |
 | v4.7 | 2026-02-21 | 대화 자동 동기화 + 카테고리별 노트북: conversation-sync.sh + 3분류(rules/conv/tech) + 로컬 인덱스 |

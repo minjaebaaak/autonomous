@@ -1,8 +1,8 @@
-# Autonomous Mode v5.2 - 범용 프레임워크
+# Autonomous Mode v5.3 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.2: 세션 전환 전략 추가 (compaction 대신 새 세션 + nlm 복원). v5.1: Phase 9/2/6.5.
+> v5.3: 핸드오프 노트 메커니즘 (세션 자동 이어받기). v5.2: 세션 전환 전략. v5.1: Phase 9/2/6.5.
 
 ---
 
@@ -85,6 +85,23 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 - **🔴 Read 도구로 코드 파일 전체를 읽는 것 금지** (편집 직전 최소 범위만 허용)
 
 repomix 설정이 없으면 이 Step 건너뛰기.
+
+**Step 1.6: 핸드오프 노트 확인** (자동)
+
+`~/.claude/state/session-handoff.md`가 존재하면:
+
+**검증 (3단계)**:
+1. 타임스탬프 확인 → 24시간 초과 시 삭제 후 건너뛰기
+2. project 경로 vs 현재 `$PWD` 대조 → 불일치 시 무시 (삭제 안 함, 다른 프로젝트용)
+3. `$ARGUMENTS` 확인 → 인자가 있으면 (새 작업) 핸드오프 무시 + 삭제
+
+**검증 통과 시**:
+1. 파일 읽기 → 이전 세션의 작업 컨텍스트 복원
+2. 파일 삭제 (소비 완료)
+3. "이전 세션에서 [task]를 하고 있었습니다. 이어가겠습니다." 출력
+4. `pending_confirmation`이 있으면 사용자에게 확인 요청
+
+없으면 건너뛰기.
 
 **Step 1.7: 이전 세션 복원 (nlm 대화 검색)** (선택 — 설정 있을 때)
 
@@ -174,7 +191,7 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 | 에러/이슈 해결 | "XXX 처리를 어떻게 했었지?" |
 | 세션 이월 (컨텍스트 복원) | "지난 세션에서 작업하던 XXX 진행 상황은?" |
 
-### 세션 전환 전략 (v5.2)
+### 세션 전환 전략 (v5.3)
 
 > **Compaction < 새 세션**. nlm이 모든 맥락을 영구 보존하므로,
 > 컨텍스트 압축(compaction)보다 새 세션 시작이 항상 낫다.
@@ -183,9 +200,23 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 
 **Claude의 행동**:
 1. 현재 원자적 작업 완료 (진행 중인 Edit/커밋 마무리)
-2. 작업 상태 요약 출력 (다음 세션 복원용)
-3. 세션 종료 안내 (conversation-sync Stop 훅이 자동으로 nlm 업로드)
-4. 사용자에게 새 세션 시작 안내: `claude` 또는 `claude --resume`
+2. 🔴 핸드오프 노트 작성 (`~/.claude/state/session-handoff.md`):
+   ```
+   # Session Handoff
+   - project: [프로젝트 경로]
+   - task: [현재 작업 요약]
+   - completed: [완료된 항목]
+   - next_action: [다음 실행할 행동]
+   - pending_confirmation: [사용자 확인 필요 사항, 없으면 "none"]
+   - uncommitted: [yes/no]
+   - timestamp: [현재 시각]
+   ```
+3. 사용자에게 세션 종료 안내
+4. conversation-sync Stop 훅이 자동으로 nlm 업로드
+
+**새 세션 시작 시**: Step 1.6에서 핸드오프 노트 자동 감지 → 이전 작업 재개
+- `/autonomous` (인자 없음) → 핸드오프 사용
+- `/autonomous [새 작업]` → 핸드오프 무시 + 삭제
 
 **예외**: nlm 접근 불가 환경에서만 compaction 허용 (최후 수단)
 
@@ -193,6 +224,7 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 ```
 ❌ 20MB+ 경고 무시하고 compaction까지 계속 진행
 ❌ "컨텍스트가 부족합니다" 상태에서 품질 저하 감수하며 작업 계속
+❌ 핸드오프 노트 없이 세션 종료 (20MB+ 경고 시)
 ```
 
 ---
