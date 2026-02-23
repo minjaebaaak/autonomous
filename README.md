@@ -1,4 +1,4 @@
-# /autonomous v5.4
+# /autonomous v5.4.3
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -55,7 +55,7 @@ chmod +x ~/.claude/hooks/token-optimizer.sh
 ```
 ~/.claude/
 ├── commands/
-│   └── autonomous.md          # v5.4 범용 프레임워크 (SSOT)
+│   └── autonomous.md          # v5.4.3 범용 프레임워크 (SSOT)
 ├── CLAUDE.md                  # 전역 규칙 (한국어, 양방향 동기화)
 ├── settings.json              # 전역 훅 설정
 ├── state/
@@ -461,6 +461,12 @@ autonomous.md (범용, 전역)
 
 ## 최신 변경사항
 
+### v5.4.3 (2026-02-23)
+컨텍스트 토큰 모니터링: `check_session_size()` → `check_context_usage()`. JSONL `message.usage` 파싱으로 실제 context % 계산 (정확도 ~100%). 파일 크기 fallback (15MB, 기존 20MB 하향). `CONTEXT_WARNING` 상태 파일 → safe-stop 연동 (MAX_ITERATIONS 단축). autonomous.md 트리거 확장 (context % + compaction "✻ Crunched" 인식). statusline `context_window.used_percentage` 우선 사용.
+
+### v5.4.2 (2026-02-23)
+핸드오프 프로젝트 필터링: `check_handoff()`에 `- project:` 필드 vs `$PWD` 대조 추가. 다른 프로젝트 핸드오프가 현재 세션에 표시되는 버그 수정.
+
 ### v5.4.1 (2026-02-23)
 레포 완전성 보완: 필수 훅/커맨드 템플릿 추가 (token-optimizer.sh, phase0-gate.sh, infinite-loop.md). 선택 템플릿 7개 추가. settings-global.json 신규. settings-local.json에 PreToolUse 추가. aegis.json.template 레거시 제거.
 
@@ -497,8 +503,10 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v5.4.1** | **2026-02-23** | **레포 완전성**: 필수 훅 3개 + 선택 7개 + settings-global.json + commands/ 템플릿 추가. aegis 레거시 제거 |
-| **v5.4** | **2026-02-23** | **멀티세션 핸드오프**: 디렉토리 기반 `handoffs/` (동시 세션 덮어쓰기 방지, 다건 선택 재개, 레거시 호환) |
+| **v5.4.3** | **2026-02-23** | **컨텍스트 토큰 모니터링**: JSONL 파싱으로 실제 context % 계산. CONTEXT_WARNING → safe-stop 연동. Compaction 인식 트리거. Statusline 수정 |
+| v5.4.2 | 2026-02-23 | 핸드오프 프로젝트 필터링: `check_handoff()` `$PWD` 대조 |
+| v5.4.1 | 2026-02-23 | 레포 완전성: 필수 훅 3개 + 선택 7개 + settings-global.json + commands/ 템플릿 추가. aegis 레거시 제거 |
+| v5.4 | 2026-02-23 | 멀티세션 핸드오프: 디렉토리 기반 `handoffs/` (동시 세션 덮어쓰기 방지, 다건 선택 재개, 레거시 호환) |
 | v5.3 | 2026-02-23 | 핸드오프 노트: 세션 간 자동 작업 이어받기 (session-handoff.md + Step 1.6 + check_handoff) |
 | v5.2 | 2026-02-23 | 세션 전환 전략: compaction 대신 새 세션 + nlm 복원 |
 | v5.1 | 2026-02-23 | 로직 개선: Phase 9 종료 조건 명시 + Phase 2/6.5 역할 명확화 |

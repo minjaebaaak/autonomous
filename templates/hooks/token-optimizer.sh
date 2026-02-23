@@ -6,7 +6,7 @@
 # 목적: 매 사용자 입력마다 자동으로 최적화 가이드 제공
 #
 # 기능:
-#   1. 세션 크기 모니터링 (10MB 경고, 20MB 세션 종료 권고)
+#   1. 컨텍스트 사용량 모니터링 (JSONL 토큰 파싱 → 파일 크기 fallback)
 #   1.5. 핸드오프 노트 감지 (v5.4 디렉토리 기반)
 #   2. 배포 키워드 감지
 #   3. Git 키워드 감지
@@ -21,26 +21,65 @@
 
 PROMPT="${USER_PROMPT:-}"
 
-# === 1. 세션 크기 모니터링 ===
-check_session_size() {
-    # 동적 경로: 현재 PWD 기반으로 세션 디렉토리 계산
+# === 1. 컨텍스트 사용량 모니터링 (v5.4.3: 토큰 기반) ===
+check_context_usage() {
     local session_dir="$HOME/.claude/projects/-$(echo "$PWD" | tr '/' '-' | sed 's/^-//')"
+    [ -d "$session_dir" ] || return
 
-    if [ -d "$session_dir" ]; then
-        local session_file=$(ls -t "$session_dir"/*.jsonl 2>/dev/null | head -1)
+    local session_file=$(ls -t "$session_dir"/*.jsonl 2>/dev/null | head -1)
+    [ -f "$session_file" ] || return
 
-        if [ -f "$session_file" ]; then
-            local size_kb=$(du -k "$session_file" | cut -f1)
-            local size_mb=$((size_kb / 1024))
+    # 1순위: JSONL 토큰 파싱 (정확도 ~100%)
+    if command -v python3 &>/dev/null; then
+        local total_input
+        total_input=$(tail -c 200000 "$session_file" | python3 -c "
+import sys, json
+last_usage = None
+for line in sys.stdin:
+    line = line.strip()
+    if not line: continue
+    try:
+        obj = json.loads(line)
+        if obj.get('type') == 'assistant' and 'message' in obj:
+            u = obj['message'].get('usage')
+            if u: last_usage = u
+    except: pass
+if last_usage:
+    print(last_usage.get('input_tokens',0) + last_usage.get('cache_creation_input_tokens',0) + last_usage.get('cache_read_input_tokens',0))
+else:
+    print(0)
+" 2>/dev/null)
 
-            if [ "$size_kb" -gt 20480 ]; then  # 20MB
-                echo "🔴 [AUTO-WARN] 세션 ${size_mb}MB → 현재 작업 마무리 후 세션 종료! (nlm이 맥락 보존, 새 세션에서 Phase 0 복원)"
+        if [ -n "$total_input" ] && [ "$total_input" -gt 0 ] 2>/dev/null; then
+            local context_window=200000
+            local used_pct=$((total_input * 100 / context_window))
+            local remaining_pct=$((100 - used_pct))
+
+            if [ "$remaining_pct" -le 15 ]; then
+                echo "🔴 [CONTEXT] 컨텍스트 ${remaining_pct}% 남음 (${total_input}/${context_window} tokens) → 즉시 핸드오프!"
+                mkdir -p "$HOME/.claude/state"
+                echo "$remaining_pct" > "$HOME/.claude/state/CONTEXT_WARNING"
                 return
-            elif [ "$size_kb" -gt 10240 ]; then  # 10MB
-                echo "🟠 [AUTO-WARN] 세션 ${size_mb}MB → 대규모 작업 주의. 20MB 도달 시 세션 전환 필요."
+            elif [ "$remaining_pct" -le 30 ]; then
+                echo "🟠 [CONTEXT] 컨텍스트 ${remaining_pct}% 남음 (${total_input}/${context_window} tokens) → 대규모 작업 주의"
                 return
             fi
+            # 정상: 상태 파일 정리
+            rm -f "$HOME/.claude/state/CONTEXT_WARNING"
+            return
         fi
+    fi
+
+    # 2순위 fallback: 파일 크기 기반 (python3 없을 때, 임계값 하향)
+    local size_kb=$(du -k "$session_file" | cut -f1)
+    local size_mb=$((size_kb / 1024))
+
+    if [ "$size_kb" -gt 15360 ]; then  # 15MB (기존 20MB에서 하향)
+        echo "🔴 [AUTO-WARN] 세션 ${size_mb}MB → 현재 작업 마무리 후 세션 종료!"
+        mkdir -p "$HOME/.claude/state"
+        echo "15" > "$HOME/.claude/state/CONTEXT_WARNING"
+    elif [ "$size_kb" -gt 10240 ]; then  # 10MB
+        echo "🟠 [AUTO-WARN] 세션 ${size_mb}MB → 대규모 작업 주의."
     fi
 }
 
@@ -111,7 +150,7 @@ check_autonomous_phase0() {
 }
 
 # === 실행 ===
-check_session_size
+check_context_usage
 check_handoff
 check_deploy_keywords
 check_git_keywords

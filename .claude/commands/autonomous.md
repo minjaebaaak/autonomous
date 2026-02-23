@@ -1,8 +1,8 @@
-# Autonomous Mode v5.4.1 - 범용 프레임워크
+# Autonomous Mode v5.4.3 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.4: 멀티세션 핸드오프 (디렉토리 기반). v5.3: 핸드오프 노트 메커니즘. v5.2: 세션 전환 전략. v5.1: Phase 9/2/6.5.
+> v5.4.3: 컨텍스트 토큰 모니터링. v5.4.2: 핸드오프 프로젝트 필터링. v5.4: 멀티세션 핸드오프. v5.3: 핸드오프 노트. v5.2: 세션 전환 전략.
 
 ---
 
@@ -203,12 +203,15 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 | 에러/이슈 해결 | "XXX 처리를 어떻게 했었지?" |
 | 세션 이월 (컨텍스트 복원) | "지난 세션에서 작업하던 XXX 진행 상황은?" |
 
-### 세션 전환 전략 (v5.4)
+### 세션 전환 전략 (v5.4.3)
 
 > **Compaction < 새 세션**. nlm이 모든 맥락을 영구 보존하므로,
 > 컨텍스트 압축(compaction)보다 새 세션 시작이 항상 낫다.
 
-**트리거**: UserPromptSubmit 훅의 🔴 AUTO-WARN (20MB+)
+**트리거** (어느 하나라도 해당 시 즉시 핸드오프):
+1. UserPromptSubmit 훅의 🔴 CONTEXT 경고 (컨텍스트 15% 이하 — JSONL 토큰 파싱)
+2. 대화에서 `✻ Crunched` 메시지 확인 (auto-compact 발생 = 컨텍스트 80%+ 도달)
+3. UserPromptSubmit 훅의 🔴 AUTO-WARN (15MB+ fallback — python3 없을 때)
 
 **Claude의 행동**:
 1. 현재 원자적 작업 완료 (진행 중인 Edit/커밋 마무리)
@@ -237,9 +240,12 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 
 **절대 금지**:
 ```
-❌ 20MB+ 경고 무시하고 compaction까지 계속 진행
+❌ 🔴 CONTEXT 경고 (15% 이하) 무시하고 작업 계속
+❌ "✻ Crunched for..." 메시지 이후 새 작업 시작
+   → compaction = 세션 품질 저하 시작. 현재 원자적 작업만 마무리 후 핸드오프.
+❌ 🟠 CONTEXT 30% 경고 이후 대규모 작업(신규 기능, 에이전트 팀) 시작
 ❌ "컨텍스트가 부족합니다" 상태에서 품질 저하 감수하며 작업 계속
-❌ 핸드오프 노트 없이 세션 종료 (20MB+ 경고 시)
+❌ 핸드오프 노트 없이 세션 종료 (CONTEXT 경고 시)
 ❌ 싱글톤 session-handoff.md에 쓰기 (v5.3 레거시 — 덮어쓰기 위험)
 ```
 
@@ -540,11 +546,6 @@ autonomous 레포/
 7. 🔴 대화 동기화 (Stop 훅이 자동 처리 — 수동 불필요)
    - 세션 종료 시 Stop 훅이 conversation-sync.sh 자동 실행
    - 수동 필요 시: `bash scripts/conversation-sync.sh --title "<작업명>"`
-8. 🔴 자율 모드 정리 (v5.4.1 — 모든 작업 완료 후 반드시 실행):
-   rm -f ~/.claude/state/AUTONOMOUS_MODE
-   rm -f ~/.claude/state/PHASE0_COMPLETE
-   # → Stop 훅이 exit 0 반환 → 세션 정상 종료
-   # ⚠️ 미실행 시 Stop 훅 무한 루프 (exit 2 반복)
 ```
 
 **절대 금지**:
@@ -552,7 +553,6 @@ autonomous 레포/
 ❌ "커밋할까요?" / "커밋이 필요하시면 말씀해 주세요" 질문
 ❌ 작업 완료 후 커밋 없이 종료
 ❌ 커밋만 하고 푸시 생략
-❌ AUTONOMOUS_MODE 파일 삭제 없이 세션 종료 (Stop 훅 무한 루프 유발)
 ```
 
 **자가 점검** (RALPH_DONE 출력 전):
@@ -560,10 +560,6 @@ autonomous 레포/
 "커밋 & 푸시를 완료했나?"
   → 아니면 Phase 6.5 미완료
   → RALPH_DONE 출력 금지
-
-"AUTONOMOUS_MODE 파일을 삭제했나?"
-  → 아니면 Stop 훅이 무한 루프
-  → rm -f ~/.claude/state/AUTONOMOUS_MODE 실행
 ```
 
 ### Phase 7: 검증 (완료 후 자동)
@@ -611,5 +607,5 @@ touch ~/.claude/state/EMERGENCY_STOP
 **즉시 실행을 시작합니다.**
 
 🔴 **첫 번째 행동**: 위 "STEP 0: nlm 질의 + 초기화"의 Bash 명령을 실행하세요.
-🔴 Phase 0 완료 전에는 Read/Glob/Grep/Task 도구가 훅에 의해 자동 차단됩니다.
+🔴 Phase 0 완료 전에는 Read/Glob/Grep/Task 도구가 훅에 의해 차단됩니다.
 🔴 nlm 성공 시 자동으로 게이트가 해제되며, 그 후 Explore/Read 사용 가능합니다.
