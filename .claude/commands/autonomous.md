@@ -1,8 +1,8 @@
-# Autonomous Mode v5.1 - 범용 프레임워크
+# Autonomous Mode v5.2 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.1: Phase 9 종료 조건 명시 + Phase 2/6.5 역할 명확화. Phase 0 PreToolUse 훅 강제.
+> v5.2: 세션 전환 전략 추가 (compaction 대신 새 세션 + nlm 복원). v5.1: Phase 9/2/6.5.
 
 ---
 
@@ -173,6 +173,27 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 | 과거 설계 결정 | "XXX를 왜 이렇게 결정했지?" |
 | 에러/이슈 해결 | "XXX 처리를 어떻게 했었지?" |
 | 세션 이월 (컨텍스트 복원) | "지난 세션에서 작업하던 XXX 진행 상황은?" |
+
+### 세션 전환 전략 (v5.2)
+
+> **Compaction < 새 세션**. nlm이 모든 맥락을 영구 보존하므로,
+> 컨텍스트 압축(compaction)보다 새 세션 시작이 항상 낫다.
+
+**트리거**: UserPromptSubmit 훅의 🔴 AUTO-WARN (20MB+)
+
+**Claude의 행동**:
+1. 현재 원자적 작업 완료 (진행 중인 Edit/커밋 마무리)
+2. 작업 상태 요약 출력 (다음 세션 복원용)
+3. 세션 종료 안내 (conversation-sync Stop 훅이 자동으로 nlm 업로드)
+4. 사용자에게 새 세션 시작 안내: `claude` 또는 `claude --resume`
+
+**예외**: nlm 접근 불가 환경에서만 compaction 허용 (최후 수단)
+
+**절대 금지**:
+```
+❌ 20MB+ 경고 무시하고 compaction까지 계속 진행
+❌ "컨텍스트가 부족합니다" 상태에서 품질 저하 감수하며 작업 계속
+```
 
 ---
 
