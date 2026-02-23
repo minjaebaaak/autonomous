@@ -1,8 +1,8 @@
-# /autonomous v5.4.3
+# /autonomous v5.5
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
-> `/autonomous [작업]` 하나로 검증, NotebookLM 통합, 문서 동기화, Agent Teams, 자동 커밋이 모두 적용됩니다.
+> `/autonomous [작업]` 하나로 검증, NotebookLM 통합, 문서 동기화, Agent Teams, 자동 커밋 & 배포가 모두 적용됩니다.
 
 ---
 
@@ -55,7 +55,7 @@ chmod +x ~/.claude/hooks/token-optimizer.sh
 ```
 ~/.claude/
 ├── commands/
-│   └── autonomous.md          # v5.4.3 범용 프레임워크 (SSOT)
+│   └── autonomous.md          # v5.5 범용 프레임워크 (SSOT)
 ├── CLAUDE.md                  # 전역 규칙 (한국어, 양방향 동기화)
 ├── settings.json              # 전역 훅 설정
 ├── state/
@@ -461,6 +461,9 @@ autonomous.md (범용, 전역)
 
 ## 최신 변경사항
 
+### v5.5 (2026-02-24)
+프로덕션 배포 Phase 6.5 통합: Phase 6.5 워크플로우에 프로덕션 배포 단계 추가. CLAUDE.md에 "프로덕션 = 메인 환경" 또는 "Phase 6.5 확장: 배포" 있을 때 커밋 & 푸시 후 자동 배포. 절대 금지에 배포 생략/질문 추가. 자가 점검에 배포 완료 확인 추가.
+
 ### v5.4.3 (2026-02-23)
 컨텍스트 토큰 모니터링: `check_session_size()` → `check_context_usage()`. JSONL `message.usage` 파싱으로 실제 context % 계산 (정확도 ~100%). 파일 크기 fallback (15MB, 기존 20MB 하향). `CONTEXT_WARNING` 상태 파일 → safe-stop 연동 (MAX_ITERATIONS 단축). autonomous.md 트리거 확장 (context % + compaction "✻ Crunched" 인식). statusline `context_window.used_percentage` 우선 사용.
 
@@ -503,7 +506,8 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v5.4.3** | **2026-02-23** | **컨텍스트 토큰 모니터링**: JSONL 파싱으로 실제 context % 계산. CONTEXT_WARNING → safe-stop 연동. Compaction 인식 트리거. Statusline 수정 |
+| **v5.5** | **2026-02-24** | **프로덕션 배포 Phase 6.5 통합**: CLAUDE.md 배포 의무 인식 → 커밋 & 푸시 후 자동 배포. 절대 금지/자가 점검 강화 |
+| v5.4.3 | 2026-02-23 | **컨텍스트 토큰 모니터링**: JSONL 파싱으로 실제 context % 계산. CONTEXT_WARNING → safe-stop 연동. Compaction 인식 트리거. Statusline 수정 |
 | v5.4.2 | 2026-02-23 | 핸드오프 프로젝트 필터링: `check_handoff()` `$PWD` 대조 |
 | v5.4.1 | 2026-02-23 | 레포 완전성: 필수 훅 3개 + 선택 7개 + settings-global.json + commands/ 템플릿 추가. aegis 레거시 제거 |
 | v5.4 | 2026-02-23 | 멀티세션 핸드오프: 디렉토리 기반 `handoffs/` (동시 세션 덮어쓰기 방지, 다건 선택 재개, 레거시 호환) |
