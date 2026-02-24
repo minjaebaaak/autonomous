@@ -1,8 +1,8 @@
-# Autonomous Mode v5.5.1 - 범용 프레임워크
+# Autonomous Mode v5.5.2 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.5.1: 세션 종료 UX (`/clear` → `/autonomous`). v5.5: 프로덕션 배포 Phase 6.5 통합. v5.4.3: 컨텍스트 토큰 모니터링. v5.4.2: 핸드오프 프로젝트 필터링. v5.4: 멀티세션 핸드오프.
+> v5.5.2: TASK_COMPLETE 신호 누락 수정. v5.5.1: 세션 종료 UX (`/clear` → `/autonomous`). v5.5: 프로덕션 배포 Phase 6.5 통합. v5.4.3: 컨텍스트 토큰 모니터링.
 
 ---
 
@@ -557,6 +557,7 @@ autonomous 레포/
 8. 🔴 대화 동기화 (Stop 훅이 자동 처리 — 수동 불필요)
    - 세션 종료 시 Stop 훅이 conversation-sync.sh 자동 실행
    - 수동 필요 시: `bash scripts/conversation-sync.sh --title "<작업명>"`
+9. 🔴 완료 신호: `touch ~/.claude/state/TASK_COMPLETE` (safe-stop-hook 즉시 종료)
 ```
 
 **절대 금지**:
@@ -567,6 +568,7 @@ autonomous 레포/
 ❌ 커밋 & 푸시만 하고 배포 생략 (CLAUDE.md에 배포 의무 있을 때)
 ❌ "배포할까요?" 질문 (배포 의무 프로젝트에서)
 ❌ curl 200만 확인하고 브라우저 미확인
+❌ 작업 완료 후 TASK_COMPLETE 신호 없이 "완료" 선언
 ```
 
 **자가 점검** (RALPH_DONE 출력 전):
@@ -576,6 +578,8 @@ autonomous 레포/
 "프로덕션 배포를 완료했나?" (CLAUDE.md에 배포 의무 있을 때)
   → 아니면 Phase 6.5 미완료
   → RALPH_DONE 출력 금지
+"TASK_COMPLETE 신호를 보냈나?"
+  → 아니면 즉시 `touch ~/.claude/state/TASK_COMPLETE`
 ```
 
 ### Phase 7: 검증 (완료 후 자동)

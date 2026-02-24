@@ -1,4 +1,4 @@
-# /autonomous v5.5.1
+# /autonomous v5.5.2
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -461,6 +461,9 @@ autonomous.md (범용, 전역)
 
 ## 최신 변경사항
 
+### v5.5.2 (2026-02-24)
+TASK_COMPLETE 신호 누락 수정: Phase 6.5 워크플로우에 `touch ~/.claude/state/TASK_COMPLETE` 단계 추가. safe-stop-hook v4.3: 2시간+ 잔류 태스크 무시. 작업 완료 후 무한 반복 버그 해결.
+
 ### v5.5.1 (2026-02-24)
 세션 종료 UX 개선: 컨텍스트 소진 시 "새 세션에서 진행하세요" 대신 "`/clear` → `/autonomous`" 안내 출력. 같은 tmux 창에서 핸드오프 자동 복원. 절대 금지에 "새 세션 권장" / "추가 작업이 있으시면..." 추가.
 
@@ -509,7 +512,8 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v5.5.1** | **2026-02-24** | **세션 종료 UX**: `/clear` → `/autonomous` 안내. "새 세션 권장" 절대 금지 |
+| **v5.5.2** | **2026-02-24** | **TASK_COMPLETE 신호**: Phase 6.5에 완료 신호 추가 + safe-stop-hook v4.3 잔류 태스크 방어 |
+| v5.5.1 | 2026-02-24 | **세션 종료 UX**: `/clear` → `/autonomous` 안내. "새 세션 권장" 절대 금지 |
 | v5.5 | 2026-02-24 | **프로덕션 배포 Phase 6.5 통합**: CLAUDE.md 배포 의무 인식 → 커밋 & 푸시 후 자동 배포. 절대 금지/자가 점검 강화 |
 | v5.4.3 | 2026-02-23 | **컨텍스트 토큰 모니터링**: JSONL 파싱으로 실제 context % 계산. CONTEXT_WARNING → safe-stop 연동. Compaction 인식 트리거. Statusline 수정 |
 | v5.4.2 | 2026-02-23 | 핸드오프 프로젝트 필터링: `check_handoff()` `$PWD` 대조 |
