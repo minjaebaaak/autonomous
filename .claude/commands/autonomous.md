@@ -1,8 +1,8 @@
-# Autonomous Mode v5.5.2 - 범용 프레임워크
+# Autonomous Mode v5.5.3 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.5.2: TASK_COMPLETE 신호 누락 수정. v5.5.1: 세션 종료 UX (`/clear` → `/autonomous`). v5.5: 프로덕션 배포 Phase 6.5 통합. v5.4.3: 컨텍스트 토큰 모니터링.
+> v5.5.3: Post-Compaction Recovery 절차 추가. v5.5.2: TASK_COMPLETE 신호 누락 수정. v5.5.1: 세션 종료 UX (`/clear` → `/autonomous`). v5.5: 프로덕션 배포 Phase 6.5 통합.
 
 ---
 
@@ -236,6 +236,21 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
    ```
 4. conversation-sync Stop 훅이 자동으로 nlm 업로드
 
+**Post-Compaction Recovery** (압축이 이미 발생한 경우):
+
+> `✻ Conversation compacted` 메시지를 감지했으나 핸드오프 전에 압축이 완료된 경우,
+> 같은 세션에서 nlm으로 맥락을 복구한 후 작업을 재개한다.
+
+1. 🔴 nlm 대화 복구 (필수 — 건너뛰기 금지):
+   ```bash
+   export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
+   nlm notebook query sm-conv "현재 세션에서 작업하던 내용과 진행 상황은?"
+   ```
+2. 복구된 맥락과 압축 요약을 대조 → 누락된 디테일 보완
+3. 이후 핸드오프 판단:
+   - 작업이 거의 완료 → 마무리 후 핸드오프
+   - 작업이 많이 남음 → 즉시 핸드오프 (압축 상태에서 대규모 작업 금지)
+
 **새 세션 시작 시**: Step 1.6에서 핸드오프 노트 자동 감지 → 이전 작업 재개
 - `/autonomous` (인자 없음) → 핸드오프 사용 (다건 시 목록 표시)
 - `/autonomous [새 작업]` → 핸드오프 무시 + 삭제
@@ -253,6 +268,8 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 ❌ 싱글톤 session-handoff.md에 쓰기 (v5.3 레거시 — 덮어쓰기 위험)
 ❌ "새 세션에서 진행하세요" (새 터미널 불필요 — /clear로 충분)
 ❌ "추가 작업이 있으시면..." (작업이 남았으면 /clear + /autonomous 안내)
+❌ `✻ Conversation compacted` 후 nlm 복구 없이 작업 계속
+   → 압축 요약은 디테일 손실. nlm으로 반드시 보완.
 ```
 
 ---
