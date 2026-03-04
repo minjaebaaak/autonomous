@@ -1,4 +1,4 @@
-# /autonomous v5.9
+# /autonomous v5.10
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -557,6 +557,8 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
+| **v5.10** | **2026-03-04** | **TASK_COMPLETE 후 즉시 정지**: PreToolUse 훅(phase0-gate.sh v1.2, pre-bash-check.sh v1.1)이 TASK_COMPLETE/SESSION_RESTART 감지 시 모든 도구 강제 차단. 세션 종료 선언 후 도구 호출 불가 |
+| v5.9 | 2026-03-04 | **멀티세션 충돌 확률 0**: 전 상태 파일 세션 스코핑 + mkdir 뮤텍스 |
 | **v5.8** | **2026-03-04** | **멀티세션 인프라**: TMUX_PANE 세션 스코핑, nlm-sync.sh dedup 버그 수정, autonomous.md 28% 압축 (675→483줄) |
 | v5.7 | 2026-03-04 | 세션 자동 재시작: auto-session.sh 래퍼 + SESSION_RESTART 신호 |
 | v5.6 | 2026-03-03 | **nlm 동기화 루프 폐합**: Phase 0 C-3 빈 결과 분기 (동기화 상태 진단 → 재동기화), Phase 6.5 동기화 검증 게이트 (exit code + source list 검증 + nlm-sync-status.json 기록) |

@@ -1,8 +1,8 @@
-# Autonomous Mode v5.9 - 범용 프레임워크
+# Autonomous Mode v5.10 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.9: 멀티세션 충돌 확률 0 (전 상태 파일 세션 스코핑 + mkdir 뮤텍스). v5.8: TMUX_PANE 기반 핸드오프/상태 파일 분리. v5.7: 세션 자동 재시작.
+> v5.10: TASK_COMPLETE 후 즉시 정지 (PreToolUse 강제 차단). v5.9: 멀티세션 충돌 확률 0. v5.8: TMUX_PANE 기반 핸드오프/상태 파일 분리. v5.7: 세션 자동 재시작.
 
 ---
 
@@ -196,7 +196,8 @@ PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
    touch ~/.claude/state/SESSION_RESTART${SUFFIX}
    touch ~/.claude/state/TASK_COMPLETE${SUFFIX}
    ```
-4. 사용자에게 안내 (래퍼 유무 모두 대응):
+   🔴 **v5.10: 이 시점 이후 모든 도구 호출 금지** — PreToolUse 훅(phase0-gate.sh, pre-bash-check.sh)이 TASK_COMPLETE 파일을 감지하여 Read/Edit/Bash 등 모든 도구를 강제 차단. 텍스트 출력만 가능.
+4. 사용자에게 안내 (도구 호출 없이 텍스트만 출력):
    ```
    ⚠️ 컨텍스트가 소진되어 이 세션을 마무리합니다.
    auto-session 사용 시 자동 재개됩니다.
@@ -221,7 +222,7 @@ PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
 
 **새 세션**: Step 1.6에서 핸드오프 자동 감지. `/autonomous` = 핸드오프 사용, `/autonomous [작업]` = 무시+삭제.
 
-**절대 금지**: CONTEXT 경고 무시 | Crunched 후 새 작업 시작 | 핸드오프 없이 종료 | SESSION_RESTART 없이 수동 재시작 안내 | compacted 후 nlm 복구 없이 작업 계속
+**절대 금지**: CONTEXT 경고 무시 | Crunched 후 새 작업 시작 | 핸드오프 없이 종료 | SESSION_RESTART 없이 수동 재시작 안내 | compacted 후 nlm 복구 없이 작업 계속 | **TASK_COMPLETE 터치 후 도구 호출** (v5.10: PreToolUse 훅이 강제 차단)
 
 ---
 
@@ -494,9 +495,10 @@ bash scripts/conversation-sync.sh --title "<작업명>"
    ```
    - TASK_COMPLETE 터치 시 SESSION_RESTART는 터치하지 않음
    - SESSION_RESTART = 컨텍스트 소진 핸드오프 전용 (세션 전환 전략 참조)
+   - 🔴 **v5.10: TASK_COMPLETE 터치 후 모든 도구 호출 금지** — PreToolUse 훅이 자동 차단. 텍스트 출력만 가능.
 ```
 
-**금지**: 커밋/배포 질문 | 커밋 없이 종료 | 푸시/배포 생략 | TASK_COMPLETE 없이 "완료" 선언
+**금지**: 커밋/배포 질문 | 커밋 없이 종료 | 푸시/배포 생략 | TASK_COMPLETE 없이 "완료" 선언 | **TASK_COMPLETE 후 도구 호출**
 **점검**: 커밋&푸시 완료? 배포 완료? TASK_COMPLETE 전송?
 
 ### Phase 7: 검증 (완료 후 자동)
