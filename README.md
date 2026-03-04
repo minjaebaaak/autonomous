@@ -1,4 +1,4 @@
-# /autonomous v5.7
+# /autonomous v5.8
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -78,9 +78,9 @@ auto-session                        # 핸드오프에서 자동 복원
 ```
 ~/.claude/
 ├── commands/
-│   └── autonomous.md          # v5.7 범용 프레임워크 (SSOT)
+│   └── autonomous.md          # v5.8 범용 프레임워크 (SSOT)
 ├── scripts/
-│   └── auto-session.sh        # v5.7 세션 자동 재시작 래퍼
+│   └── auto-session.sh        # v1.1 세션 자동 재시작 래퍼 (세션 스코핑)
 ├── CLAUDE.md                  # 전역 규칙 (한국어, 양방향 동기화)
 ├── settings.json              # 전역 훅 설정
 ├── state/
@@ -488,8 +488,11 @@ autonomous.md (범용, 전역)
 
 ## 최신 변경사항
 
+### v5.8 (2026-03-04)
+멀티세션 인프라: TMUX_PANE 기반 세션 스코핑 (핸드오프/상태 파일/auto-session.sh 모두 pane ID로 격리). nlm-sync.sh dedup 버그 수정 (SEARCH_TITLE 불일치 + 단일 매치 삭제 → 전체 삭제). autonomous.md 675→483줄 압축 (28%). safe-stop-hook v4.5, reset-session v2.6, auto-session.sh v1.1.
+
 ### v5.7 (2026-03-04)
-세션 자동 재시작: `auto-session.sh` 래퍼 스크립트 추가. 컨텍스트 소진 시 `SESSION_RESTART` 신호 파일을 감지하여 자동으로 새 Claude 프로세스를 시작. 핸드오프 노트를 통해 이전 세션 맥락을 다음 세션으로 전달. safe-stop-hook v4.4: SESSION_RESTART 인지 로그 추가. reset-session v2.5: SESSION_RESTART 정리 추가.
+세션 자동 재시작: `auto-session.sh` 래퍼 스크립트. 컨텍스트 소진 시 `SESSION_RESTART` 신호 감지 → 새 Claude 프로세스 자동 시작. safe-stop-hook v4.4, reset-session v2.5.
 
 ### v5.6 (2026-03-03)
 nlm 동기화 루프 폐합: Phase 0 C-3 빈 결과 분기 (동기화 상태 진단 → 재동기화), Phase 6.5 동기화 검증 게이트 (exit code + source list 검증 + nlm-sync-status.json 기록). nlm-sync.sh: write_sync_status() + 업로드 후 검증. repomix-sync.sh: 성공/실패 카운팅.
@@ -548,7 +551,8 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v5.7** | **2026-03-04** | **세션 자동 재시작**: auto-session.sh 래퍼 (SESSION_RESTART 신호 감지 → 새 Claude 프로세스 자동 시작), safe-stop-hook v4.4 SESSION_RESTART 인지, reset-session v2.5 정리 |
+| **v5.8** | **2026-03-04** | **멀티세션 인프라**: TMUX_PANE 세션 스코핑, nlm-sync.sh dedup 버그 수정, autonomous.md 28% 압축 (675→483줄) |
+| v5.7 | 2026-03-04 | 세션 자동 재시작: auto-session.sh 래퍼 + SESSION_RESTART 신호 |
 | v5.6 | 2026-03-03 | **nlm 동기화 루프 폐합**: Phase 0 C-3 빈 결과 분기 (동기화 상태 진단 → 재동기화), Phase 6.5 동기화 검증 게이트 (exit code + source list 검증 + nlm-sync-status.json 기록) |
 | v5.5.3 | 2026-02-25 | Post-Compaction Recovery: 압축 후 nlm 대화 복구 필수. 압축 요약만으로 작업 계속 금지 |
 | v5.5.2 | 2026-02-24 | **TASK_COMPLETE 신호**: Phase 6.5에 완료 신호 추가 + safe-stop-hook v4.3 잔류 태스크 방어 |

@@ -1,8 +1,8 @@
-# Autonomous Mode v5.7 - 범용 프레임워크
+# Autonomous Mode v5.8 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.7: 세션 자동 재시작 (auto-session 래퍼 + SESSION_RESTART 신호). v5.6: nlm 동기화 루프 폐합 (Phase 0 C-3 빈 결과 분기 + Phase 6.5 동기화 검증 게이트).
+> v5.8: 멀티세션 스코핑 (TMUX_PANE 기반 핸드오프/상태 파일 분리, 2건+ 자동 소비). v5.7: 세션 자동 재시작 (auto-session + SESSION_RESTART). v5.6: nlm 동기화 루프 폐합.
 
 ---
 
@@ -98,50 +98,32 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 
 repomix 설정이 없으면 이 Step 건너뛰기.
 
-**Step 1.6: 핸드오프 노트 확인** (자동)
+**Step 1.6: 핸드오프 노트 확인** (자동 — 세션 스코핑 v5.8)
+
+```bash
+# 세션 ID 결정 (tmux > auto-session > fallback)
+PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
+# PANE_ID가 비어있으면 = 단일 세션 환경 → 전체 핸드오프 대상
+```
 
 `~/.claude/state/handoffs/` 디렉토리를 스캔:
 
-**레거시 마이그레이션**: `~/.claude/state/session-handoff.md`가 존재하면:
-```bash
-mkdir -p ~/.claude/state/handoffs/
-mv ~/.claude/state/session-handoff.md ~/.claude/state/handoffs/handoff-legacy-$(date +%s).md
-```
-
-**각 파일별 검증 (3단계, 순서대로)**:
-1. 타임스탬프 확인 → 24시간 초과 시 삭제 후 건너뛰기
-2. project 경로 vs 현재 `$PWD` 대조 → 불일치 시 무시 (삭제 안 함, 다른 프로젝트용)
-3. `$ARGUMENTS` 확인 → 인자가 있으면 (새 작업) **현재 프로젝트 매칭 핸드오프만** 삭제
+**필터링** (순서대로):
+1. 24시간 초과 → 삭제
+2. project 경로 ≠ `$PWD` → 무시 (삭제 안 함)
+3. **PANE_ID가 있으면**: 파일명에 `-pane{PANE_ID}` 포함된 것만 매칭
+4. `$ARGUMENTS`가 있으면 (새 작업): 매칭된 핸드오프 삭제
 
 **유효 파일 수에 따른 분기**:
 - **0건**: 건너뛰기
-- **1건**: 자동 복원 (기존과 동일)
+- **1건+**: 가장 최근 1개 자동 복원 (질문 없이)
   1. 파일 읽기 → 컨텍스트 복원
-  2. 파일 삭제 (소비)
-  3. "이전 세션에서 [task]를 하고 있었습니다. 이어가겠습니다."
-- **2건+**: 목록 표시 → 사용자 선택
-  1. 각 핸드오프의 task, session, timestamp 나열
-  2. 사용자에게 "어떤 작업을 이어갈까요?" 질문
-  3. 선택된 파일만 복원 + 삭제
-  4. 나머지는 유지 (다른 세션에서 소비 가능)
+  2. 소비된 파일 삭제
+  3. "이전 세션에서 [task]를 이어갑니다."
 
-없으면 건너뛰기.
+**Step 1.7: 이전 세션 복원** (선택 — sm-conv 설정 있을 때)
 
-**Step 1.7: 이전 세션 복원 (nlm 대화 검색)** (선택 — 설정 있을 때)
-
-세션 이월(continuation) 또는 새 세션에서 이전 맥락이 필요하면:
-
-1. 로컬 인덱스 확인 (즉시):
-```bash
-python3 -c "import json; [print(f'{e[\"date\"]} {e[\"topic\"]}') for e in json.load(open(os.path.expanduser('~/.claude/conversation-index.json')))]" 2>/dev/null
-```
-2. 관련 주제 발견 시 → 대화 노트북 질의:
-```bash
-nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상황은?"
-```
-3. 미발견 시 → 전체 노트북 병렬 질의 후 인덱스 보완
-
-대화 동기화 설정이 없으면 이 Step 건너뛰기.
+맥락 필요 시: `nlm notebook query sm-conv "지난 세션에서 [주제] 진행 상황은?"`. 없으면 건너뛰기.
 
 **Step 2: 관련 섹션 식별 및 출력** (필수)
 ```
@@ -155,28 +137,7 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 ✅ Phase 0 완료 - 기술문서 확인됨
 ```
 
-### 자가 점검 질문 (매 작업 시작 시)
-
-```
-"기술문서 먼저 확인했나?"
-  → 아니면 즉시 Phase 0 실행
-
-"Phase 0 완료 메시지 출력했나?"
-  → 아니면 아직 시작 안 한 것
-
-"관련 파일 목록 추출했나?"
-  → 아니면 Phase 0 미완료
-
-"규칙이 X를 반영한다고 주장하려 하고 있나?"
-  → 해당 규칙을 nlm/Read로 확인했나?
-  → 아니면 확인 후 주장 (P2 위반 방지)
-```
-
-### Phase 0 미완료 시 조치
-
-1. **즉시 중단**
-2. **Phase 0으로 복귀**
-3. **기술문서 읽기부터 다시 시작**
+**자가 점검**: Phase 0 완료 메시지 출력 전까지 다른 Phase 진행 금지. 규칙 주장 전 nlm/Read로 확인 필수.
 
 ---
 
@@ -198,22 +159,7 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 | 수정 결과 검증 (대형 100줄+) | `nlm notebook query` | ❌ Read 전체 파일 |
 | 과거 구현/설계 확인 | `nlm notebook query` | ❌ git log 전체 조회 |
 
-### Read 도구 사용 조건 (4가지만 허용)
-
-1. **Edit/Write 직전** — 수정 범위만 (offset + limit 50~100줄)
-2. **repomix/grep으로 찾을 수 없는 특수 파일** — 설정 파일, JSON 등
-3. **특정 줄 번호를 이미 알 때** — offset + limit 최소 읽기
-4. **수정 결과 검증** — 소형 파일(~100줄)은 Read, 대형 파일은 nlm query
-
-### 질의 패턴 (개발 시작 전 반드시 실행)
-
-| 상황 | 질의 예시 |
-|------|-----------|
-| 새 기능 구현 전 | "XXX 관련 기존 구현이 있나?" |
-| 도메인 지식 필요 | "XXX의 요건/스펙은?" |
-| 과거 설계 결정 | "XXX를 왜 이렇게 결정했지?" |
-| 에러/이슈 해결 | "XXX 처리를 어떻게 했었지?" |
-| 세션 이월 (컨텍스트 복원) | "지난 세션에서 작업하던 XXX 진행 상황은?" |
+**Read 사용 조건**: (1) Edit 직전 offset+limit (2) 특수 파일(설정/JSON) (3) 수정 검증(소형만). 그 외 nlm/repomix/grep 사용.
 
 ### 세션 전환 전략 (v5.7)
 
@@ -227,24 +173,28 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 
 **Claude의 행동**:
 1. 현재 원자적 작업 완료 (진행 중인 Edit/커밋 마무리)
-2. 🔴 핸드오프 노트 작성 (디렉토리 기반 — 멀티세션 안전):
-   - `mkdir -p ~/.claude/state/handoffs/` (Bash, 디렉토리 미존재 방어)
-   - 파일명: `handoff-{unix_timestamp}-{random_4hex}.md`
+2. 🔴 핸드오프 노트 작성 (세션 스코핑 v5.8):
+   ```bash
+   mkdir -p ~/.claude/state/handoffs/
+   PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+   # 파일명: handoff-{timestamp}-pane{PANE_ID}-{hex}.md (PANE_ID 없으면 "x")
+   ```
    ```
    # Session Handoff
-   - session: [현재 세션 JSONL basename]
+   - pane: [PANE_ID 또는 "x"]
    - project: [프로젝트 경로]
    - task: [현재 작업 요약]
    - completed: [완료된 항목]
    - next_action: [다음 실행할 행동]
-   - pending_confirmation: [사용자 확인 필요 사항, 없으면 "none"]
    - uncommitted: [yes/no]
    - timestamp: [현재 시각]
    ```
-3. 🔴 자동 재시작 신호 (v5.7):
+3. 🔴 자동 재시작 신호 (v5.8 세션 스코핑):
    ```bash
-   touch ~/.claude/state/SESSION_RESTART
-   touch ~/.claude/state/TASK_COMPLETE
+   PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+   SUFFIX="${PANE_ID:+-pane$PANE_ID}"  # tmux면 "-pane5", 아니면 ""
+   touch ~/.claude/state/SESSION_RESTART${SUFFIX}
+   touch ~/.claude/state/TASK_COMPLETE${SUFFIX}
    ```
 4. 사용자에게 안내 (래퍼 유무 모두 대응):
    ```
@@ -269,27 +219,9 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
    - 작업이 거의 완료 → 마무리 후 핸드오프
    - 작업이 많이 남음 → 즉시 핸드오프 (압축 상태에서 대규모 작업 금지)
 
-**새 세션 시작 시**: Step 1.6에서 핸드오프 노트 자동 감지 → 이전 작업 재개
-- `/autonomous` (인자 없음) → 핸드오프 사용 (다건 시 목록 표시)
-- `/autonomous [새 작업]` → 핸드오프 무시 + 삭제
+**새 세션**: Step 1.6에서 핸드오프 자동 감지. `/autonomous` = 핸드오프 사용, `/autonomous [작업]` = 무시+삭제.
 
-**예외**: nlm 접근 불가 환경에서만 compaction 허용 (최후 수단)
-
-**절대 금지**:
-```
-❌ 🔴 CONTEXT 경고 (15% 이하) 무시하고 작업 계속
-❌ "✻ Crunched for..." 메시지 이후 새 작업 시작
-   → compaction = 세션 품질 저하 시작. 현재 원자적 작업만 마무리 후 핸드오프.
-❌ 🟠 CONTEXT 30% 경고 이후 대규모 작업(신규 기능, 에이전트 팀) 시작
-❌ "컨텍스트가 부족합니다" 상태에서 품질 저하 감수하며 작업 계속
-❌ 핸드오프 노트 없이 세션 종료 (CONTEXT 경고 시)
-❌ 싱글톤 session-handoff.md에 쓰기 (v5.3 레거시 — 덮어쓰기 위험)
-❌ SESSION_RESTART 없이 "이어가기: /clear → /autonomous"만 출력 (수동 재시작 강제)
-❌ "새 세션에서 진행하세요" (새 터미널 불필요 — /clear로 충분)
-❌ "추가 작업이 있으시면..." (작업이 남았으면 /clear + /autonomous 안내)
-❌ `✻ Conversation compacted` 후 nlm 복구 없이 작업 계속
-   → 압축 요약은 디테일 손실. nlm으로 반드시 보완.
-```
+**절대 금지**: CONTEXT 경고 무시 | Crunched 후 새 작업 시작 | 핸드오프 없이 종료 | SESSION_RESTART 없이 수동 재시작 안내 | compacted 후 nlm 복구 없이 작업 계속
 
 ---
 
@@ -382,57 +314,11 @@ nlm 실패 시: `nlm login` → 재시도. 재시도도 실패 시:
 4. 🔴 자동 커밋 & 푸시
 ```
 
-**🔴 전역 = 유일한 SSOT (v3.6 교훈)**:
-```
-- 수정: 반드시 전역(`~/.claude/commands/autonomous.md`)에서만
-- 레포: 전역 복사본일 뿐. 직접 수정 절대 금지
-- 방향: 전역 → 레포 단방향만 허용
-```
+**SSOT**: 전역(`~/.claude/commands/autonomous.md`)에서만 수정. 레포는 복사본. 수정 후 반드시 autonomous 레포 커밋 & 푸시 + README 업데이트.
 
-**절대 금지**:
-```
-❌ autonomous.md 수정 후 커밋하지 않음
-❌ README.md 업데이트 없이 autonomous.md만 커밋
-❌ "커밋할까요?" 질문
-❌ autonomous 레포에서 직접 autonomous.md 수정 (전역 우회)
-❌ 레포에서 버전 올리고 전역에 미반영
-```
+### Phase 3.5: 🔄 양방향 동기화
 
----
-
-### Phase 3.5: 🔄 양방향 동기화 규칙 (v3.0 신규)
-
-> **autonomous = 지혜의 집약체. 프로젝트에서 배운 교훈은 범용으로 승격.**
-
-**구조**:
-```
-autonomous 레포/
-├── .claude/commands/autonomous.md     # 범용 (지혜의 집약체)
-├── projects/[프로젝트]/
-│   ├── CLAUDE-ext.md                  # 프로젝트 Phase 확장 백업
-│   └── autonomous-history.md          # 프로젝트 교훈 아카이브
-```
-
-**규칙**:
-```
-1. 범용 autonomous.md 수정 시:
-   - ~/.claude/commands/autonomous.md 수정 (전역 = 실제 사용 파일)
-   - autonomous 레포에 복사 + README.md 업데이트
-   - autonomous 레포에 커밋 & 푸시
-   → 모든 프로젝트에 즉시 반영 (전역이므로)
-
-2. 프로젝트 교훈 발생 시:
-   - 해당 프로젝트 CLAUDE.md의 Phase 확장에 기록
-   - 범용화 가능한 교훈이면 → 프로젝트 특화 세부사항을 추상화
-     → 범용 autonomous.md에 추상화 버전 추가
-   - autonomous 레포 projects/[프로젝트]/autonomous-history.md에 원본 기록
-   - autonomous 레포 projects/[프로젝트]/CLAUDE-ext.md에 Phase 확장 백업
-   - autonomous 레포에 커밋 & 푸시
-
-3. CLAUDE.md Phase 확장 수정 시:
-   - autonomous 레포 projects/[프로젝트]/CLAUDE-ext.md에 동기화
-   - autonomous 레포에 커밋 & 푸시
-```
+교훈 발생 시: CLAUDE.md Phase 확장에 기록 → 범용화 가능하면 autonomous.md에 추상화 추가 → autonomous 레포 커밋.
 
 **범용화 판단 기준**:
 - "이 교훈은 다른 프로젝트에서도 적용 가능한가?"
@@ -503,34 +389,7 @@ autonomous 레포/
 
 > **에이전트 결과의 코드 값 + 수량 모두 원본 소스와 대조**
 
-**A. 값 검증** (기존):
-1. 에이전트 보고서의 코드 블록에서 핵심 값(변수명, 상수, 함수명) 추출
-2. Grep/Read로 원본 파일에서 실제 값 확인
-3. 불일치 시 **원본 파일의 값**을 사용
-
-**B. 수량 교차 검증** (v3.3 신규 - 🔴 필수):
-1. 에이전트가 "N곳 발견" 보고 시, 독립적 Grep으로 실제 수량 확인
-2. 불일치 시 누락분 식별 및 분석
-3. **수량 일치 확인 출력 (필수)**:
-   ```
-   ✅ 수량 교차 검증:
-   - 파일: [파일명]
-   - Agent 보고: N곳
-   - Grep 실제: M곳
-   - 불일치: [있음/없음]
-   ```
-
-**C. 교차 검증 완료 후에만 플랜 작성 가능** (v3.3 신규):
-- Agent 결과 수신 → **반드시** 독립 Grep → 불일치 보고 → 그 후에 플랜 작성
-- 이 순서를 건너뛰면 **규칙 위반**
-
-**절대 금지**:
-```
-❌ 에이전트 보고서의 코드 블록을 검증 없이 그대로 사용
-❌ 에이전트가 보고한 변수명/상수값을 확인 없이 코드에 적용
-❌ 에이전트 보고 수량을 "전수"로 간주 (독립 Grep 없이)
-❌ Agent 결과 수신 → 바로 플랜 작성 (교차 검증 생략)
-```
+Agent 결과 수신 → 독립 Grep으로 값+수량 교차 검증 → 검증 완료 후에만 플랜 작성. 미검증 사용 금지.
 
 ### Phase 5.6: 🔗 Source-Sink 정합성 (v3.5)
 > db.add() 대상(Sink)과 select() 대상(Source)이 일치하는가? 불일치 시 중복 저장 발생.
@@ -549,22 +408,7 @@ autonomous 레포/
 > 자가 점검: "6개 Layer 모두 grep 완료했나?" — `/checklist-bug`에 상세 체크리스트.
 
 ### Phase 6: 📝 커밋 전 문서 확인 (🔴 강제)
-
-> **코드 커밋 전에 반드시 관련 문서 업데이트 확인**
-
-**필수 체크리스트** (커밋 전 매번 확인):
-```
-[ ] 1. 수정한 파일 목록 확인 (git status)
-[ ] 2. CLAUDE.md "Phase 2 확장" 매핑에 해당하는 파일인지 확인
-[ ] 3. 해당하면 관련 문서 먼저 업데이트
-[ ] 4. git add에 문서 파일 포함
-[ ] 5. 코드와 문서를 같은 커밋에 포함
-```
-
-**자가 점검 질문** (커밋 직전에 자문):
-- "문서 업데이트 없이 커밋하려 하고 있나?"
-- "수정한 코드가 프로젝트 문서에 반영되어 있나?"
-- → **아니면 즉시 문서 업데이트 후 커밋**
+커밋 전: git status → CLAUDE.md 매핑 확인 → 관련 문서 업데이트 → 코드+문서 같은 커밋.
 
 ### Phase 6.5: 🔄 작업 완료 후 자동 커밋 & 푸시 & 배포 (🔴 강제)
 
@@ -596,32 +440,18 @@ autonomous 레포/
 8. 🔴 대화 동기화 (Stop 훅이 자동 처리 — 수동 불필요)
    - 세션 종료 시 Stop 훅이 conversation-sync.sh 자동 실행
    - 수동 필요 시: `bash scripts/conversation-sync.sh --title "<작업명>"`
-9. 🔴 완료 신호: `touch ~/.claude/state/TASK_COMPLETE` (safe-stop-hook 즉시 종료)
+9. 🔴 완료 신호 (세션 스코핑):
+   ```bash
+   PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+   SUFFIX="${PANE_ID:+-pane$PANE_ID}"
+   touch ~/.claude/state/TASK_COMPLETE${SUFFIX}
+   ```
    - TASK_COMPLETE 터치 시 SESSION_RESTART는 터치하지 않음
    - SESSION_RESTART = 컨텍스트 소진 핸드오프 전용 (세션 전환 전략 참조)
 ```
 
-**절대 금지**:
-```
-❌ "커밋할까요?" / "커밋이 필요하시면 말씀해 주세요" 질문
-❌ 작업 완료 후 커밋 없이 종료
-❌ 커밋만 하고 푸시 생략
-❌ 커밋 & 푸시만 하고 배포 생략 (CLAUDE.md에 배포 의무 있을 때)
-❌ "배포할까요?" 질문 (배포 의무 프로젝트에서)
-❌ curl 200만 확인하고 브라우저 미확인
-❌ 작업 완료 후 TASK_COMPLETE 신호 없이 "완료" 선언
-```
-
-**자가 점검** (RALPH_DONE 출력 전):
-```
-"커밋 & 푸시를 완료했나?"
-  → 아니면 Phase 6.5 미완료
-"프로덕션 배포를 완료했나?" (CLAUDE.md에 배포 의무 있을 때)
-  → 아니면 Phase 6.5 미완료
-  → RALPH_DONE 출력 금지
-"TASK_COMPLETE 신호를 보냈나?"
-  → 아니면 즉시 `touch ~/.claude/state/TASK_COMPLETE`
-```
+**금지**: 커밋/배포 질문 | 커밋 없이 종료 | 푸시/배포 생략 | TASK_COMPLETE 없이 "완료" 선언
+**점검**: 커밋&푸시 완료? 배포 완료? TASK_COMPLETE 전송?
 
 ### Phase 7: 검증 (완료 후 자동)
 
@@ -650,23 +480,4 @@ touch ~/.claude/state/EMERGENCY_STOP
 
 ---
 
-## 사용 예시
-
-**Before (기존):**
-```
-/autonomous ultrathink Sequential Thinking MCP 기반으로 배포해줘
-```
-
-**After (v3.0+):**
-```
-/autonomous 배포해줘
-```
-→ 모든 최적화 자동 적용!
-
----
-
-**즉시 실행을 시작합니다.**
-
-🔴 **첫 번째 행동**: 위 "STEP 0: nlm 질의 + 초기화"의 Bash 명령을 실행하세요.
-🔴 Phase 0 완료 전에는 Read/Glob/Grep/Task 도구가 훅에 의해 차단됩니다.
-🔴 nlm 성공 시 자동으로 게이트가 해제되며, 그 후 Explore/Read 사용 가능합니다.
+🔴 **즉시 실행**: STEP 0 Bash 명령 실행 → Phase 0 완료까지 Read/Glob/Grep 훅 차단 → nlm 성공 시 게이트 해제.
