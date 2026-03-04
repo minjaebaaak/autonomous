@@ -1,8 +1,8 @@
-# Autonomous Mode v5.5.3 - 범용 프레임워크
+# Autonomous Mode v5.7 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.5.3: Post-Compaction Recovery 절차 추가. v5.5.2: TASK_COMPLETE 신호 누락 수정. v5.5.1: 세션 종료 UX (`/clear` → `/autonomous`). v5.5: 프로덕션 배포 Phase 6.5 통합.
+> v5.7: 세션 자동 재시작 (auto-session 래퍼 + SESSION_RESTART 신호). v5.6: nlm 동기화 루프 폐합 (Phase 0 C-3 빈 결과 분기 + Phase 6.5 동기화 검증 게이트).
 
 ---
 
@@ -52,10 +52,22 @@ nlm notebook query "<alias 또는 노트북ID>" "<작업 관련 질의>"
 **C-2) command not found / 기타 오류:**
 - fallback: 기술문서를 Read 도구로 직접 읽는다
 
+**C-3) 성공이지만 빈 결과 (동기화 미완료 가능성):**
+1. 다른 노트북에 동일 질의 재시도 (예: sm-rules 빈 결과 → sm-tech 시도)
+2. 전 노트북 빈 결과 → 동기화 상태 확인:
+   ```bash
+   cat ~/.claude/state/nlm-sync-status.json 2>/dev/null || echo "상태 파일 없음"
+   ```
+3. 최근 실패/경고 기록 있음 → `nlm source list <alias>`로 소스 존재 확인
+4. 소스 자체가 없음 → CLAUDE.md Phase 확장의 동기화 스크립트 재실행 (nlm-sync.sh / repomix-sync.sh)
+5. 소스 있는데 빈 결과 → 질의어 변경 후 재시도 (최대 2회)
+6. 재시도 후에도 빈 결과 → fallback: Read 도구로 기술문서 직접 읽기
+
 **절대 금지:**
 ```
 ❌ 인증 만료 시 `nlm login` 없이 바로 fallback
 ❌ "nlm 실패 → 직접 비교 진행" (재인증 시도 없이)
+❌ nlm 빈 결과를 "해당 정보 없음"으로 단정 (동기화 미완료 가능성 미진단)
 ```
 
 **Step 1.5: repomix 세션 스냅샷 (MCP 도구 사용)** (설정 있을 때)
@@ -203,7 +215,7 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 | 에러/이슈 해결 | "XXX 처리를 어떻게 했었지?" |
 | 세션 이월 (컨텍스트 복원) | "지난 세션에서 작업하던 XXX 진행 상황은?" |
 
-### 세션 전환 전략 (v5.4.3)
+### 세션 전환 전략 (v5.7)
 
 > **Compaction < 새 세션**. nlm이 모든 맥락을 영구 보존하므로,
 > 컨텍스트 압축(compaction)보다 새 세션 시작이 항상 낫다.
@@ -229,12 +241,18 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
    - uncommitted: [yes/no]
    - timestamp: [현재 시각]
    ```
-3. 🔴 사용자에게 이어가기 안내 (아래 형식 필수):
+3. 🔴 자동 재시작 신호 (v5.7):
+   ```bash
+   touch ~/.claude/state/SESSION_RESTART
+   touch ~/.claude/state/TASK_COMPLETE
+   ```
+4. 사용자에게 안내 (래퍼 유무 모두 대응):
    ```
    ⚠️ 컨텍스트가 소진되어 이 세션을 마무리합니다.
-   이어가기: `/clear` → `/autonomous`
+   auto-session 사용 시 자동 재개됩니다.
+   수동 재시작: `/clear` → `/autonomous`
    ```
-4. conversation-sync Stop 훅이 자동으로 nlm 업로드
+5. conversation-sync Stop 훅이 자동으로 nlm 업로드
 
 **Post-Compaction Recovery** (압축이 이미 발생한 경우):
 
@@ -266,6 +284,7 @@ nlm notebook query sm-conv "지난 세션에서 작업하던 [주제] 진행 상
 ❌ "컨텍스트가 부족합니다" 상태에서 품질 저하 감수하며 작업 계속
 ❌ 핸드오프 노트 없이 세션 종료 (CONTEXT 경고 시)
 ❌ 싱글톤 session-handoff.md에 쓰기 (v5.3 레거시 — 덮어쓰기 위험)
+❌ SESSION_RESTART 없이 "이어가기: /clear → /autonomous"만 출력 (수동 재시작 강제)
 ❌ "새 세션에서 진행하세요" (새 터미널 불필요 — /clear로 충분)
 ❌ "추가 작업이 있으시면..." (작업이 남았으면 /clear + /autonomous 안내)
 ❌ `✻ Conversation compacted` 후 nlm 복구 없이 작업 계속
@@ -570,11 +589,16 @@ autonomous 레포/
 7. 🔴 NotebookLM 동기화 (CLAUDE.md Phase 확장에 NotebookLM 설정 있을 때):
    - **문서 동기화**: 커밋에 포함된 문서 중 NotebookLM 소스 해당 파일 → `nlm-sync.sh <파일>` 실행
    - **코드 동기화**: 코드 변경이 있으면 → `repomix-sync.sh` 실행 (코드 스냅샷 재생성 + 업로드)
-   - nlm 실패 시 경고만 출력 (커밋 완료됨, 블로커 아님)
+   - **동기화 검증**: 스크립트 exit code 확인. 실패 시:
+     (a) 1회 재시도 (인증 만료 자동 복구 포함)
+     (b) 재시도 실패 → 경고 출력 + `~/.claude/state/nlm-sync-status.json`에 기록 (다음 Phase 0 C-3에서 진단)
+   - 커밋 롤백 사유 아님. 단, 실패를 삼키지 않고 기록.
 8. 🔴 대화 동기화 (Stop 훅이 자동 처리 — 수동 불필요)
    - 세션 종료 시 Stop 훅이 conversation-sync.sh 자동 실행
    - 수동 필요 시: `bash scripts/conversation-sync.sh --title "<작업명>"`
 9. 🔴 완료 신호: `touch ~/.claude/state/TASK_COMPLETE` (safe-stop-hook 즉시 종료)
+   - TASK_COMPLETE 터치 시 SESSION_RESTART는 터치하지 않음
+   - SESSION_RESTART = 컨텍스트 소진 핸드오프 전용 (세션 전환 전략 참조)
 ```
 
 **절대 금지**:
