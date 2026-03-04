@@ -1,4 +1,4 @@
-# /autonomous v5.8
+# /autonomous v5.9
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -78,17 +78,18 @@ auto-session                        # 핸드오프에서 자동 복원
 ```
 ~/.claude/
 ├── commands/
-│   └── autonomous.md          # v5.8 범용 프레임워크 (SSOT)
+│   └── autonomous.md          # v5.9 범용 프레임워크 (SSOT)
 ├── scripts/
 │   └── auto-session.sh        # v1.1 세션 자동 재시작 래퍼 (세션 스코핑)
 ├── CLAUDE.md                  # 전역 규칙 (한국어, 양방향 동기화)
 ├── settings.json              # 전역 훅 설정
 ├── state/
-│   ├── AUTONOMOUS_MODE        # 자율 모드 활성 플래그
-│   ├── SESSION_RESTART         # 컨텍스트 소진 → 자동 재시작 신호 (v5.7)
+│   ├── AUTONOMOUS_MODE{-paneN} # 자율 모드 활성 플래그 (세션 스코핑 v5.9)
+│   ├── SESSION_RESTART{-paneN} # 컨텍스트 소진 → 자동 재시작 신호 (v5.7)
+│   ├── *-lock-*/              # mkdir 기반 원자적 잠금 디렉토리 (v5.9)
 │   ├── handoffs/              # 핸드오프 노트 디렉토리 (v5.4, 멀티세션 안전)
 │   │   └── handoff-*.md       # 세션별 개별 핸드오프 파일
-│   └── EMERGENCY_STOP         # 긴급 중단 (touch로 생성)
+│   └── EMERGENCY_STOP         # 긴급 중단 (유일한 전역 공유 파일)
 ├── conversation-index.json    # 대화 동기화 인덱스
 └── projects/
     └── <project-hash>/
@@ -105,6 +106,8 @@ your-project/
 ├── .claude/
 │   ├── settings.local.json    # 프로젝트별 훅 설정
 │   └── hooks/
+│       ├── lib/
+│       │   └── lock.sh        # mkdir 기반 원자적 잠금 (v5.9)
 │       ├── notify-user.sh     # 사용자 알림
 │       ├── safe-stop-hook.sh  # 무한루프 방지
 │       ├── phase0-gate.sh     # Phase 0 도구 차단 (필수)
@@ -487,6 +490,9 @@ autonomous.md (범용, 전역)
 ---
 
 ## 최신 변경사항
+
+### v5.9 (2026-03-04)
+멀티세션 충돌 확률 0: 17개 충돌 벡터를 세션 스코핑 + mkdir 뮤텍스로 완전 해소. lib/lock.sh (mkdir 기반 원자적 잠금, stale lock 감지). safe-stop-hook v4.6 (전 상태 파일 _SUFFIX, LOCK_FILE→LOCK_DIR). phase0-gate v1.1, reset-session v2.8 (전체 스코핑). code-pattern-check v1.1 (SSOT 동시 수정 경고). nlm-sync.sh/conversation-sync.sh에 mkdir lock. EMERGENCY_STOP만 의도적 전역 공유.
 
 ### v5.8 (2026-03-04)
 멀티세션 인프라: TMUX_PANE 기반 세션 스코핑 (핸드오프/상태 파일/auto-session.sh 모두 pane ID로 격리). nlm-sync.sh dedup 버그 수정 (SEARCH_TITLE 불일치 + 단일 매치 삭제 → 전체 삭제). autonomous.md 675→483줄 압축 (28%). safe-stop-hook v4.5, reset-session v2.6, auto-session.sh v1.1.
