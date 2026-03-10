@@ -1,8 +1,8 @@
-# Autonomous Mode v5.10 - 범용 프레임워크
+# Autonomous Mode v5.12 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.10: TASK_COMPLETE 후 즉시 정지 (PreToolUse 강제 차단). v5.9: 멀티세션 충돌 확률 0. v5.8: TMUX_PANE 기반 핸드오프/상태 파일 분리. v5.7: 세션 자동 재시작.
+> v5.12: 🟠 경고 과잉 반응 방지 + 잔류 TASK_COMPLETE 자동 정리. v5.10: TASK_COMPLETE 후 즉시 정지 (PreToolUse 강제 차단). v5.9: 멀티세션 충돌 확률 0. v5.8: TMUX_PANE 기반 핸드오프/상태 파일 분리. v5.7: 세션 자동 재시작.
 
 ---
 
@@ -166,7 +166,12 @@ PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
 > **Compaction < 새 세션**. nlm이 모든 맥락을 영구 보존하므로,
 > 컨텍스트 압축(compaction)보다 새 세션 시작이 항상 낫다.
 
-**트리거** (어느 하나라도 해당 시 즉시 핸드오프):
+**🟠 vs 🔴 구분 (v5.12):**
+- **🟠 (15-30%)**: 작업 계속. 새로운 대규모 작업(3+ 파일 수정) 시작만 자제.
+- **🔴 (≤15%)**: 즉시 핸드오프 (아래 트리거).
+- 🔴 **🟠 경고에서 작업 거부 금지** — "컨텍스트 부족으로 새 세션 필요" 판단 금지.
+
+**트리거** (어느 하나라도 해당 시 즉시 핸드오프 — 🔴만):
 1. UserPromptSubmit 훅의 🔴 CONTEXT 경고 (컨텍스트 15% 이하 — JSONL 토큰 파싱)
 2. 대화에서 `✻ Crunched` 메시지 확인 (auto-compact 발생 = 컨텍스트 80%+ 도달)
 3. UserPromptSubmit 훅의 🔴 AUTO-WARN (15MB+ fallback — python3 없을 때)
@@ -222,7 +227,7 @@ PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
 
 **새 세션**: Step 1.6에서 핸드오프 자동 감지. `/autonomous` = 핸드오프 사용, `/autonomous [작업]` = 무시+삭제.
 
-**절대 금지**: CONTEXT 경고 무시 | Crunched 후 새 작업 시작 | 핸드오프 없이 종료 | SESSION_RESTART 없이 수동 재시작 안내 | compacted 후 nlm 복구 없이 작업 계속 | **TASK_COMPLETE 터치 후 도구 호출** (v5.10: PreToolUse 훅이 강제 차단)
+**절대 금지**: 🔴 CONTEXT 경고 무시 | Crunched 후 새 작업 시작 | 핸드오프 없이 종료 | SESSION_RESTART 없이 수동 재시작 안내 | compacted 후 nlm 복구 없이 작업 계속 | **TASK_COMPLETE 터치 후 도구 호출** (v5.10: PreToolUse 훅이 강제 차단) | **🟠 CONTEXT 경고에서 "새 세션 필요" 판단** (🔴만 핸드오프 트리거)
 
 ---
 
