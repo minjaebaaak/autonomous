@@ -1,4 +1,4 @@
-# /autonomous v5.12
+# /autonomous v5.13
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -557,7 +557,8 @@ NotebookLM 자동 동기화(v4.0), Phase 0 nlm 강제(v4.1~v4.3), 인증 만료 
 
 | 버전 | 날짜 | 변경사항 |
 |------|------|----------|
-| **v5.12** | **2026-03-10** | **🟠 경고 과잉 반응 방지 + 잔류 TASK_COMPLETE 자동 정리**: 🟠(15-30%) = 작업 계속 명시, 🔴(≤15%)만 핸드오프 트리거. TASK_COMPLETE 5분 TTL로 잔류 파일 자동 삭제. token-optimizer/pre-bash-check/phase0-gate 3중 age 체크 |
+| **v5.13** | **2026-03-12** | **근본 원인 연쇄 분석 강제**: Phase 4를 3단계 인과 추적(현상→근접→근본)으로 강화. 필수 출력 포맷 + 수정 레벨 판단 + 자가 점검 3문항. 현상만 패치하고 "수정 완료" 선언 금지 |
+| v5.12 | 2026-03-10 | **🟠 경고 과잉 반응 방지 + 잔류 TASK_COMPLETE 자동 정리**: 🟠(15-30%) = 작업 계속 명시, 🔴(≤15%)만 핸드오프 트리거. TASK_COMPLETE 5분 TTL로 잔류 파일 자동 삭제. token-optimizer/pre-bash-check/phase0-gate 3중 age 체크 |
 | v5.11 | 2026-03-04 | **AUTO-WARN 오탐 방지**: python3 fallthrough 차단 + JSONL tail 500KB 확대 + 세션 스코핑 일관성 |
 | v5.10 | 2026-03-04 | **TASK_COMPLETE 후 즉시 정지**: PreToolUse 훅(phase0-gate.sh v1.2, pre-bash-check.sh v1.1)이 TASK_COMPLETE/SESSION_RESTART 감지 시 모든 도구 강제 차단. 세션 종료 선언 후 도구 호출 불가 |
 | v5.9 | 2026-03-04 | **멀티세션 충돌 확률 0**: 전 상태 파일 세션 스코핑 + mkdir 뮤텍스 |
