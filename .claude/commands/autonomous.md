@@ -1,8 +1,8 @@
-# Autonomous Mode v5.13 - 범용 프레임워크
+# Autonomous Mode v5.14 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.13: 근본 원인 연쇄 분석 강제 (Phase 4 강화). v5.12: 🟠 경고 과잉 반응 방지 + 잔류 TASK_COMPLETE 자동 정리. v5.10: TASK_COMPLETE 후 즉시 정지. v5.9: 멀티세션 충돌 확률 0. v5.8: TMUX_PANE 세션 스코핑. v5.7: 세션 자동 재시작.
+> v5.14: nlm 판단 오류 방지(Step 1 컨텍스트 비의존) + 실패 진단 의무. v5.13: 근본 원인 연쇄 분석 강제. v5.12: 🟠 과잉 반응 방지. v5.10: TASK_COMPLETE 즉시 정지. v5.9: 멀티세션 충돌 0. v5.8: 세션 스코핑.
 
 ---
 
@@ -14,32 +14,33 @@
 
 ### 🔴 실행 순서 (반드시 순서대로 - 건너뛰기 금지)
 
-**Step 1: 기술문서 참조 (모든 작업 — nlm 강제)** (필수 - 생략 금지)
+**Step 1: 기술문서 참조 (모든 작업 — nlm 우선)** (필수 - 생략 금지)
 
 > **🔴 근거**: NotebookLM에 CLAUDE.md, MEMORY.md, 기술표, 규칙화 문서가 모두 포함됨.
-> CLAUDE.md "기술표 업데이트 의무"에서 "코드 변경 후 기술표 관련 섹션 업데이트 필수"이므로,
 > **작업 규모와 무관하게** nlm 질의는 필수.
 
-CLAUDE.md "Phase 확장 설정"에서 **Phase 0 NotebookLM** 항목을 찾는다:
+**🔴 nlm 존재 확인 우선 (v5.14 — 컨텍스트 비의존):**
+```bash
+export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
+command -v nlm &>/dev/null && echo "nlm 사용 가능" || echo "nlm 미설치"
+```
 
-**A) NotebookLM 설정이 있으면 (alias 또는 노트북 ID):**
+**A) nlm이 설치되어 있으면 → 무조건 nlm 시도:**
 ```bash
 # 🔴 반드시 아래 Bash 명령을 실행할 것 (Read 도구로 기술문서 직접 읽기 금지)
 # 🔴 출력을 head/tail로 파이프하지 말 것 (Claude Code에서 사용 불가)
 export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
-nlm notebook query "<alias 또는 노트북ID>" "<작업 관련 질의>"
 
-# 카테고리별 질의 (CLAUDE.md Phase 확장에서 alias 확인):
-# nlm notebook query sm-rules "소유권 감지 규칙은?"     # 규칙/교훈
-# nlm notebook query sm-tech "SERP 수집 관련 파일은?"   # 기술/코드
-# nlm notebook query sm-conv "지난 세션에서 title 버그 수정은?"  # 대화 이력
-# 모르겠으면 여러 노트북 병렬 질의
+# alias는 CLAUDE.md "Phase 0 NotebookLM"에서 확인.
+# alias를 모르겠으면 (compaction 후 등):
+#   nlm notebook list  → 노트북 목록에서 적절한 것 선택
+nlm notebook query "<alias 또는 노트북ID>" "<작업 관련 질의>"
 ```
 - 질의 결과에서 관련 파일/함수 목록을 추출한다
 - 필요 시 grep으로 교차 검증한다
 - **🔴 nlm 성공 시 Read 도구로 기술문서 전체를 읽지 않는다** (토큰 낭비)
 
-**B) NotebookLM 설정이 없으면:**
+**B) nlm이 설치되어 있지 않으면:**
 - 기술문서를 Read 도구로 직접 읽는다
 
 **C) nlm 실패 시 — 원인별 분기 (🔴 fallback 전 재인증 필수):**
@@ -423,8 +424,23 @@ nlm 실패 시: `nlm login` → 재시도. 재시도도 실패 시:
 - 🔴 단, 사용자 의도가 모호할 때는 반드시 확인 (예: "필요 없다"의 주어 불분명)
 - TodoWrite로 모든 진행 상황 추적
 - 모든 작업 완료까지 계속 진행
-- 오류 발생 시 자체 해결 시도 (최대 3회)
 - 배포 전 테스트 포함
+
+### 🔴 실패 = 진단 기회 (v5.14)
+
+> **"안 되네" 선언 금지.** 모든 실패에 원인 파악 → 수정 시도 → 재시도.
+
+**필수 행동**:
+1. 실패 발생 → 에러 메시지 분석 (exit code, stderr, 로그)
+2. 원인 분류: 인증? PATH? 권한? 네트워크? 설정? 계정?
+3. 수정 가능하면 → 수정 후 재시도 (최대 3회)
+4. 수정 불가하면 → **원인과 한계를 명시**하고 fallback
+
+**절대 금지**:
+- ❌ 에러 메시지 읽지 않고 "실패" 선언
+- ❌ 원인 미파악 상태에서 fallback 전환
+- ❌ "안 됩니다", "사용할 수 없습니다" 단정 (진단 없이)
+- ❌ 1회 실패로 도구/기능 전체를 "사용 불가"로 판단
 
 ### Phase 5.5: 🔍 에이전트 결과 검증 (v3.3 강화)
 
