@@ -1,4 +1,4 @@
-# /autonomous v5.14
+# /autonomous v5.15
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -490,6 +490,9 @@ autonomous.md (범용, 전역)
 ---
 
 ## 최신 변경사항
+
+### v5.15 (2026-03-16)
+컨텍스트 착각 방지: 🎯 Step 0 작업 식별 강제 (Phase 0 전 필수 출력). 사용자 명시적 입력 > 핸드오프 > 훅 제안 우선순위. 핸드오프 삭제 후 핸드오프 작업 시작 금지 규칙 강화. 절대 금지 목록에 "사용자 질문 무시하고 핸드오프/훅 작업 시작" 추가.
 
 ### v5.9 (2026-03-04)
 멀티세션 충돌 확률 0: 17개 충돌 벡터를 세션 스코핑 + mkdir 뮤텍스로 완전 해소. lib/lock.sh (mkdir 기반 원자적 잠금, stale lock 감지). safe-stop-hook v4.6 (전 상태 파일 _SUFFIX, LOCK_FILE→LOCK_DIR). phase0-gate v1.1, reset-session v2.8 (전체 스코핑). code-pattern-check v1.1 (SSOT 동시 수정 경고). nlm-sync.sh/conversation-sync.sh에 mkdir lock. EMERGENCY_STOP만 의도적 전역 공유.
