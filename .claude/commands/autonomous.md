@@ -1,8 +1,8 @@
-# Autonomous Mode v5.18 - 범용 프레임워크
+# Autonomous Mode v5.19 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.18: 컨텍스트 트리거 규칙 분리(트리거=훅, 절차=autonomous.md). v5.16: 토큰 예산 관리 + 작업 유형별 분기. v5.15: 🎯 작업 식별 강제. v5.14: nlm 판단 오류 방지 + 실패 진단 의무. v5.13: 근본 원인 연쇄 분석.
+> v5.19: Stop 훅 자동 핸드오프 + session ID 격리. v5.18: 컨텍스트 트리거=훅 전용. v5.16: 토큰 예산 + 작업 유형 분기. v5.15: 🎯 작업 식별. v5.14: 실패 진단 의무. v5.13: 근본 원인 연쇄 분석.
 
 ---
 
@@ -122,13 +122,9 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 
 repomix 설정이 없으면 이 Step 건너뛰기.
 
-**Step 1.6: 핸드오프 노트 확인** (자동 — 세션 스코핑 v5.8)
+**Step 1.6: 핸드오프 노트 확인** (자동 — v5.19 session ID 격리)
 
-```bash
-# 세션 ID 결정 (tmux > auto-session > fallback)
-PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
-# PANE_ID가 비어있으면 = 단일 세션 환경 → 전체 핸드오프 대상
-```
+> Stop 훅이 세션 종료 시 자동 생성. Claude가 직접 생성하지 않아도 됨.
 
 `~/.claude/state/handoffs/` 디렉토리를 스캔:
 
@@ -136,7 +132,8 @@ PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
 1. 24시간 초과 → 삭제
 2. project 경로 ≠ `$PWD` → 무시 (삭제 안 함)
 3. **PANE_ID가 있으면**: 파일명에 `-pane{PANE_ID}` 포함된 것만 매칭
-4. `$ARGUMENTS`가 있으면 (새 작업): 매칭된 핸드오프 삭제
+4. **session ID 필터** (v5.19): 현재 세션 JSONL 파일명 앞 8자 = 핸드오프의 `- session:` → 같으면 건너뛰기 (자기 자신 방지)
+5. `$ARGUMENTS`가 있으면 (새 작업): 매칭된 핸드오프 삭제
    > 🔴 핸드오프 삭제 후 핸드오프 작업을 시작하지 않는다.
    > `$ARGUMENTS`의 🎯 작업만 실행한다. 핸드오프 내용은 참고도 하지 않는다.
 
@@ -214,10 +211,13 @@ PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
 ```bash
 mkdir -p ~/.claude/state/handoffs/
 PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+SESSION_DIR="$HOME/.claude/projects/-$(echo "$PWD" | tr '/' '-' | sed 's/^-//')"
+SESSION_ID=$(ls -t "$SESSION_DIR"/*.jsonl 2>/dev/null | head -1 | xargs basename 2>/dev/null | cut -d. -f1 | cut -c1-8)
 # 파일명: handoff-{timestamp}-pane{PANE_ID}-{hex}.md
 ```
 ```
 # Session Handoff
+- session: [SESSION_ID 앞 8자]
 - pane: [PANE_ID 또는 "x"]
 - project: [프로젝트 경로]
 - task: [현재 작업 요약]
