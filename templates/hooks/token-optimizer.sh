@@ -68,7 +68,7 @@ else:
             local remaining_pct=$((100 - used_pct))
 
             if [ "$remaining_pct" -le 15 ]; then
-                echo "🔴 [CONTEXT] 컨텍스트 ${remaining_pct}% 남음 (${total_input}/${context_window} tokens) → 즉시 핸드오프!"
+                echo "🔴 [CONTEXT] 컨텍스트 ${remaining_pct}% 남음 (${total_input}/${context_window} tokens) → 현재 작업 마무리 후 autonomous.md '핸드오프 절차' 실행하세요."
                 mkdir -p "$HOME/.claude/state"
                 echo "$remaining_pct" > "$HOME/.claude/state/CONTEXT_WARNING${SUFFIX}"
                 return

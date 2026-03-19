@@ -1,8 +1,8 @@
-# Autonomous Mode v5.17 - 범용 프레임워크
+# Autonomous Mode v5.18 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.17: 컨텍스트 판단 훅 전용(자체 오판 방지). v5.16: 토큰 예산 관리 + 작업 유형별 분기. v5.15: 🎯 작업 식별 강제. v5.14: nlm 판단 오류 방지 + 실패 진단 의무. v5.13: 근본 원인 연쇄 분석. v5.12: 🟠 과잉 반응 방지.
+> v5.18: 컨텍스트 트리거 규칙 분리(트리거=훅, 절차=autonomous.md). v5.16: 토큰 예산 관리 + 작업 유형별 분기. v5.15: 🎯 작업 식별 강제. v5.14: nlm 판단 오류 방지 + 실패 진단 의무. v5.13: 근본 원인 연쇄 분석.
 
 ---
 
@@ -205,87 +205,47 @@ PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')  # tmux pane ID (예: 5)
 - 단순 작업 (1-2 파일 수정): Phase 4.5 팀원 판단 = "단독 진행" 1줄로 끝
 - 질문/분석 작업 (코드 수정 없음): Phase 2~9 전부 건너뛰고 바로 답변
 
-### 🔴 컨텍스트 판단은 훅 전용 (v5.17)
+### 핸드오프 절차 (v5.18 — 훅 🔴 지시 시에만 실행)
 
-> Claude 자신의 "컨텍스트 부족한 것 같다"는 **근거 없는 착각**이다.
-> 컨텍스트 소진 판단은 **오직 token-optimizer.sh 훅의 🔴 경고에만** 의존한다.
+> 이 절차는 token-optimizer.sh 훅이 🔴 [CONTEXT] 메시지를 보냈을 때만 실행한다.
 
-**필수 조건** (핸드오프 시작 전 반드시 확인):
-- 현재 대화에 🔴 [CONTEXT] 훅 메시지가 **존재하는가?**
-- 존재하지 않으면 → 핸드오프 금지. 작업 계속.
+**1단계**: 현재 원자적 작업 마무리 (진행 중인 Edit/커밋)
+**2단계**: 핸드오프 노트 작성:
+```bash
+mkdir -p ~/.claude/state/handoffs/
+PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+# 파일명: handoff-{timestamp}-pane{PANE_ID}-{hex}.md
+```
+```
+# Session Handoff
+- pane: [PANE_ID 또는 "x"]
+- project: [프로젝트 경로]
+- task: [현재 작업 요약]
+- completed: [완료된 항목]
+- next_action: [다음 실행할 행동]
+- uncommitted: [yes/no]
+- timestamp: [현재 시각]
+```
+**3단계**: 재시작 신호:
+```bash
+PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+SUFFIX="${PANE_ID:+-pane$PANE_ID}"
+touch ~/.claude/state/SESSION_RESTART${SUFFIX}
+touch ~/.claude/state/TASK_COMPLETE${SUFFIX}
+```
+🔴 TASK_COMPLETE 터치 후 모든 도구 호출 금지 (PreToolUse 훅이 강제 차단).
 
-**절대 금지**:
-- ❌ 훅 🔴 경고 없이 "컨텍스트 제한적" 판단
-- ❌ "많은 작업을 했으니 컨텍스트 부족할 것" 추측
-- ❌ 세션 시간/도구 호출 횟수 기반 컨텍스트 추정
+**4단계**: 사용자 안내 (텍스트만):
+```
+⚠️ 컨텍스트가 소진되어 이 세션을 마무리합니다.
+수동 재시작: /clear → /autonomous
+```
 
-### 세션 전환 전략 (v5.7)
-
-> **Compaction < 새 세션**. nlm이 모든 맥락을 영구 보존하므로,
-> 컨텍스트 압축(compaction)보다 새 세션 시작이 항상 낫다.
-
-**🟠 vs 🔴 구분 (v5.12):**
-- **🟠 (15-30%)**: 작업 계속. 새로운 대규모 작업(3+ 파일 수정) 시작만 자제.
-- **🔴 (≤15%)**: 즉시 핸드오프 (아래 트리거).
-- 🔴 **🟠 경고에서 작업 거부 금지** — "컨텍스트 부족으로 새 세션 필요" 판단 금지.
-
-**트리거** (어느 하나라도 해당 시 즉시 핸드오프 — 🔴만):
-1. UserPromptSubmit 훅의 🔴 CONTEXT 경고 (컨텍스트 15% 이하 — JSONL 토큰 파싱)
-2. 대화에서 `✻ Crunched` 메시지 확인 (auto-compact 발생 = 컨텍스트 80%+ 도달)
-3. UserPromptSubmit 훅의 🔴 AUTO-WARN (15MB+ fallback — python3 없을 때)
-
-**Claude의 행동**:
-1. 현재 원자적 작업 완료 (진행 중인 Edit/커밋 마무리)
-2. 🔴 핸드오프 노트 작성 (세션 스코핑 v5.8):
-   ```bash
-   mkdir -p ~/.claude/state/handoffs/
-   PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
-   # 파일명: handoff-{timestamp}-pane{PANE_ID}-{hex}.md (PANE_ID 없으면 "x")
-   ```
-   ```
-   # Session Handoff
-   - pane: [PANE_ID 또는 "x"]
-   - project: [프로젝트 경로]
-   - task: [현재 작업 요약]
-   - completed: [완료된 항목]
-   - next_action: [다음 실행할 행동]
-   - uncommitted: [yes/no]
-   - timestamp: [현재 시각]
-   ```
-3. 🔴 자동 재시작 신호 (v5.8 세션 스코핑):
-   ```bash
-   PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
-   SUFFIX="${PANE_ID:+-pane$PANE_ID}"  # tmux면 "-pane5", 아니면 ""
-   touch ~/.claude/state/SESSION_RESTART${SUFFIX}
-   touch ~/.claude/state/TASK_COMPLETE${SUFFIX}
-   ```
-   🔴 **v5.10: 이 시점 이후 모든 도구 호출 금지** — PreToolUse 훅(phase0-gate.sh, pre-bash-check.sh)이 TASK_COMPLETE 파일을 감지하여 Read/Edit/Bash 등 모든 도구를 강제 차단. 텍스트 출력만 가능.
-4. 사용자에게 안내 (도구 호출 없이 텍스트만 출력):
-   ```
-   ⚠️ 컨텍스트가 소진되어 이 세션을 마무리합니다.
-   auto-session 사용 시 자동 재개됩니다.
-   수동 재시작: `/clear` → `/autonomous`
-   ```
-5. conversation-sync Stop 훅이 자동으로 nlm 업로드
-
-**Post-Compaction Recovery** (압축이 이미 발생한 경우):
-
-> `✻ Conversation compacted` 메시지를 감지했으나 핸드오프 전에 압축이 완료된 경우,
-> 같은 세션에서 nlm으로 맥락을 복구한 후 작업을 재개한다.
-
-1. 🔴 nlm 대화 복구 (필수 — 건너뛰기 금지):
-   ```bash
-   export PATH="$HOME/Library/Python/3.14/bin:$HOME/.local/bin:$PATH"
-   nlm notebook query sm-conv "현재 세션에서 작업하던 내용과 진행 상황은?"
-   ```
-2. 복구된 맥락과 압축 요약을 대조 → 누락된 디테일 보완
-3. 이후 핸드오프 판단:
-   - 작업이 거의 완료 → 마무리 후 핸드오프
-   - 작업이 많이 남음 → 즉시 핸드오프 (압축 상태에서 대규모 작업 금지)
+**Post-Compaction Recovery** (`✻ Conversation compacted` 감지 시):
+1. nlm 대화 복구: `nlm notebook query sm-conv "현재 세션에서 작업하던 내용은?"`
+2. 복구된 맥락으로 작업 재개
 
 **새 세션**: Step 1.6에서 핸드오프 자동 감지. `/autonomous` = 핸드오프 사용, `/autonomous [작업]` = 무시+삭제.
-
-**절대 금지**: 🔴 CONTEXT 경고 무시 | Crunched 후 새 작업 시작 | 핸드오프 없이 종료 | SESSION_RESTART 없이 수동 재시작 안내 | compacted 후 nlm 복구 없이 작업 계속 | **TASK_COMPLETE 터치 후 도구 호출** (v5.10: PreToolUse 훅이 강제 차단) | **🟠 CONTEXT 경고에서 "새 세션 필요" 판단** (🔴만 핸드오프 트리거) | **사용자 질문을 무시하고 핸드오프/훅 작업 시작** (v5.15: 🎯 출력으로 방지) | **훅 🔴 경고 없이 자체 컨텍스트 부족 판단하여 핸드오프** (v5.17)
 
 ---
 
