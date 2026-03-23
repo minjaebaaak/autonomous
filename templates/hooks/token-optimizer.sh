@@ -68,13 +68,51 @@ else:
             local remaining_pct=$((100 - used_pct))
 
             if [ "$remaining_pct" -le 15 ]; then
-                echo "🔴 [CONTEXT] ${remaining_pct}% 남음 (${total_input}/${context_window}) → 현재 작업 마무리 후 autonomous.md '핸드오프 절차' 실행."
                 mkdir -p "$HOME/.claude/state"
                 echo "$remaining_pct" > "$HOME/.claude/state/CONTEXT_WARNING${SUFFIX}"
-                # v5.21: 🔴 발동 시 nlm 자동 업로드 (비동기)
+
+                # v5.25: 🔴 발동 시 기록 먼저, 안내 나중
+                # 1) 핸드오프 파일 자동 생성
+                local HANDOFF_DIR="$HOME/.claude/state/handoffs"
+                local PROJECT_HASH=$(echo "$PWD" | md5 | cut -c1-8)
+                local HO_SESSION_ID=$(basename "$session_file" .jsonl | cut -c1-8)
+                local HO_TASK=$(tail -c 100000 "$session_file" | python3 -c "
+import sys, json
+lu, lt = '', ''
+for line in sys.stdin:
+    try:
+        obj = json.loads(line.strip())
+        if obj.get('type') == 'human':
+            for c in obj.get('message',{}).get('content',[]):
+                t = c.get('text','')
+                if len(t) > 10 and not t.startswith('{'): lu = t[:100]
+        elif obj.get('type') == 'assistant':
+            for c in obj.get('message',{}).get('content',[]):
+                for l in c.get('text','').split('\n'):
+                    if l.strip().startswith('🎯'): lt = l.strip()
+    except: pass
+if lu or lt: print(f'user: {lu}')
+if lt: print(lt)
+" 2>/dev/null)
+                if [ -n "$HO_TASK" ]; then
+                    mkdir -p "$HANDOFF_DIR"
+                    cat > "$HANDOFF_DIR/proj-${PROJECT_HASH}-${HO_SESSION_ID}.md" << HO_EOF
+# Session Handoff (auto — context 🔴)
+- session: ${HO_SESSION_ID}
+- project: $PWD
+- timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+- task: |
+$(echo "$HO_TASK" | sed 's/^/  /')
+HO_EOF
+                fi
+
+                # 2) nlm 자동 업로드 (비동기)
                 if [ -f "$PWD/scripts/conversation-sync.sh" ]; then
                     (bash "$PWD/scripts/conversation-sync.sh" --latest --if-significant &>/dev/null &)
                 fi
+
+                # 3) 안내 (기록 완료 후)
+                echo "🔴 [CONTEXT] ${remaining_pct}% 남음 — 핸드오프+nlm 기록 완료. 현재 작업 마무리 후 /clear → /autonomous 로 이어가세요."
                 return
             elif [ "$remaining_pct" -le 30 ]; then
                 echo "🟠 [CONTEXT] 컨텍스트 ${remaining_pct}% 남음 (${total_input}/${context_window} tokens) → 작업 계속, 대규모 신규 작업만 자제"
