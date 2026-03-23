@@ -1,8 +1,8 @@
-# Autonomous Mode v5.20 - 범용 프레임워크
+# Autonomous Mode v5.21 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.20: scarcity 프레이밍 제거. v5.19: Stop 훅 자동 핸드오프 + session ID 격리. v5.16: 작업 유형 분기. v5.15: 🎯 작업 식별. v5.14: 실패 진단 의무. v5.13: 근본 원인 연쇄 분석.
+> v5.21: 프로젝트당 1 핸드오프 + 🔴 nlm 자동 업로드. v5.20: scarcity 제거. v5.16: 작업 유형 분기. v5.15: 🎯 작업 식별. v5.14: 실패 진단 의무. v5.13: 근본 원인 분석.
 
 ---
 
@@ -122,27 +122,22 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 
 repomix 설정이 없으면 이 Step 건너뛰기.
 
-**Step 1.6: 핸드오프 노트 확인** (자동 — v5.19 session ID 격리)
+**Step 1.6: 핸드오프 확인** (자동 — v5.21 프로젝트당 1 핸드오프)
 
-> Stop 훅이 세션 종료 시 자동 생성. Claude가 직접 생성하지 않아도 됨.
+> Stop 훅이 프로젝트당 1개 핸드오프 파일을 자동 관리.
 
-`~/.claude/state/handoffs/` 디렉토리를 스캔:
+핸드오프 파일 확인: `~/.claude/state/handoffs/proj-{PWD의 md5 앞 8자}.md`
 
-**필터링** (순서대로):
-1. 24시간 초과 → 삭제
-2. project 경로 ≠ `$PWD` → 무시 (삭제 안 함)
-3. **PANE_ID가 있으면**: 파일명에 `-pane{PANE_ID}` 포함된 것만 매칭
-4. **session ID 필터** (v5.19): 현재 세션 JSONL 파일명 앞 8자 = 핸드오프의 `- session:` → 같으면 건너뛰기 (자기 자신 방지)
-5. `$ARGUMENTS`가 있으면 (새 작업): 매칭된 핸드오프 삭제
-   > 🔴 핸드오프 삭제 후 핸드오프 작업을 시작하지 않는다.
+**필터링**:
+1. 파일 없으면 → 건너뛰기
+2. 24시간 초과 → 무시
+3. session ID가 현재 세션과 같으면 → 무시 (자기 자신)
+4. `$ARGUMENTS`가 있으면 (새 작업) → 무시
    > `$ARGUMENTS`의 🎯 작업만 실행한다. 핸드오프 내용은 참고도 하지 않는다.
 
-**유효 파일 수에 따른 분기**:
-- **0건**: 건너뛰기
-- **1건+**: 가장 최근 1개 자동 복원 (질문 없이)
-  1. 파일 읽기 → 컨텍스트 복원
-  2. 소비된 파일 삭제
-  3. "이전 세션에서 [task]를 이어갑니다."
+**유효하면**:
+1. 파일 읽기 → 맥락 복원
+2. "이전 세션에서 [task]를 이어갑니다."
 
 **Step 1.7: 이전 세션 복원** (선택 — sm-conv 설정 있을 때)
 
@@ -201,25 +196,22 @@ repomix 설정이 없으면 이 Step 건너뛰기.
 > 이 절차는 token-optimizer.sh 훅이 🔴 [CONTEXT] 메시지를 보냈을 때만 실행한다.
 
 **1단계**: 현재 원자적 작업 마무리 (진행 중인 Edit/커밋)
-**2단계**: 핸드오프 노트 작성:
+**2단계**: 핸드오프 노트 작성 (프로젝트당 1개 — 덮어쓰기):
 ```bash
 mkdir -p ~/.claude/state/handoffs/
-PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+PROJECT_HASH=$(echo "$PWD" | md5 | cut -c1-8)
 SESSION_DIR="$HOME/.claude/projects/-$(echo "$PWD" | tr '/' '-' | sed 's/^-//')"
 SESSION_ID=$(ls -t "$SESSION_DIR"/*.jsonl 2>/dev/null | head -1 | xargs basename 2>/dev/null | cut -d. -f1 | cut -c1-8)
-# 파일명: handoff-{timestamp}-pane{PANE_ID}-{hex}.md
 ```
 ```
 # Session Handoff
 - session: [SESSION_ID 앞 8자]
-- pane: [PANE_ID 또는 "x"]
 - project: [프로젝트 경로]
 - task: [현재 작업 요약]
-- completed: [완료된 항목]
 - next_action: [다음 실행할 행동]
-- uncommitted: [yes/no]
 - timestamp: [현재 시각]
 ```
+파일: `~/.claude/state/handoffs/proj-{PROJECT_HASH}.md`
 **3단계**: 재시작 신호:
 ```bash
 PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')

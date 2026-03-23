@@ -68,9 +68,13 @@ else:
             local remaining_pct=$((100 - used_pct))
 
             if [ "$remaining_pct" -le 15 ]; then
-                echo "🔴 [CONTEXT] 컨텍스트 ${remaining_pct}% 남음 (${total_input}/${context_window} tokens) → 현재 작업 마무리 후 autonomous.md '핸드오프 절차' 실행하세요."
+                echo "🔴 [CONTEXT] ${remaining_pct}% 남음 (${total_input}/${context_window}) → 현재 작업 마무리 후 autonomous.md '핸드오프 절차' 실행."
                 mkdir -p "$HOME/.claude/state"
                 echo "$remaining_pct" > "$HOME/.claude/state/CONTEXT_WARNING${SUFFIX}"
+                # v5.21: 🔴 발동 시 nlm 자동 업로드 (비동기)
+                if [ -f "$PWD/scripts/conversation-sync.sh" ]; then
+                    (bash "$PWD/scripts/conversation-sync.sh" --latest --if-significant &>/dev/null &)
+                fi
                 return
             elif [ "$remaining_pct" -le 30 ]; then
                 echo "🟠 [CONTEXT] 컨텍스트 ${remaining_pct}% 남음 (${total_input}/${context_window} tokens) → 작업 계속, 대규모 신규 작업만 자제"
