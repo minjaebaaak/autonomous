@@ -1,8 +1,8 @@
-# Autonomous Mode v5.22 - 범용 프레임워크
+# Autonomous Mode v5.23 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.22: 프로젝트+pane 독립 핸드오프 (멀티 터미널 격리). v5.20: scarcity 제거. v5.16: 작업 유형 분기. v5.15: 🎯 작업 식별. v5.14: 실패 진단 의무. v5.13: 근본 원인 분석.
+> v5.23: session ID 기반 완전 격리 (tmux/Warp/단일 터미널 무관). v5.20: scarcity 제거. v5.16: 작업 유형 분기. v5.15: 🎯 작업 식별. v5.14: 실패 진단 의무. v5.13: 근본 원인 분석.
 
 ---
 
@@ -122,24 +122,19 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 
 repomix 설정이 없으면 이 Step 건너뛰기.
 
-**Step 1.6: 핸드오프 확인** (자동 — v5.22 프로젝트+pane 독립 격리)
+**Step 1.6: 핸드오프 확인** (자동 — v5.23 session ID 기반 완전 격리)
 
-> Stop 훅이 프로젝트+pane 조합별 핸드오프 파일을 자동 관리.
+> 각 Claude Code 인스턴스는 고유 JSONL 세션 파일을 가진다. 이것이 유일한 식별자.
+> tmux, Warp, 단일 터미널 — 환경 무관하게 동일한 방식으로 격리.
 
-핸드오프 파일:
-- tmux: `~/.claude/state/handoffs/proj-{hash}-pane{PANE_ID}.md`
-- 비-tmux: `~/.claude/state/handoffs/proj-{hash}.md`
+핸드오프 파일: `~/.claude/state/handoffs/proj-{hash}-{session_id}.md`
 
 **필터링**:
-1. 파일 없으면 → 건너뛰기
+1. `proj-{현재 프로젝트 hash}-*.md` 패턴으로 해당 프로젝트 핸드오프만 검색
 2. 24시간 초과 → 무시
-3. session ID가 현재 세션과 같으면 → 무시 (자기 자신)
+3. 파일명의 session ID = 현재 세션 → 무시 (자기 자신)
 4. `$ARGUMENTS`가 있으면 (새 작업) → 무시
-   > `$ARGUMENTS`의 🎯 작업만 실행한다. 핸드오프 내용은 참고도 하지 않는다.
-
-**유효하면**:
-1. 파일 읽기 → 맥락 복원
-2. "이전 세션에서 [task]를 이어갑니다."
+5. 유효 핸드오프 중 가장 최근 1개 복원
 
 **Step 1.7: 이전 세션 복원** (선택 — sm-conv 설정 있을 때)
 
@@ -198,17 +193,16 @@ repomix 설정이 없으면 이 Step 건너뛰기.
 > 이 절차는 token-optimizer.sh 훅이 🔴 [CONTEXT] 메시지를 보냈을 때만 실행한다.
 
 **1단계**: 현재 원자적 작업 마무리 (진행 중인 Edit/커밋)
-**2단계**: 핸드오프 노트 작성 (프로젝트+pane별 1개 — 덮어쓰기):
+**2단계**: 핸드오프 노트 작성 (세션별 1개):
 ```bash
 mkdir -p ~/.claude/state/handoffs/
 PROJECT_HASH=$(echo "$PWD" | md5 | cut -c1-8)
-PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
-# tmux: proj-{hash}-pane{N}.md / 비-tmux: proj-{hash}.md
+# SESSION_ID = JSONL 파일명 앞 8자 (모든 환경에서 고유)
 ```
+파일: `~/.claude/state/handoffs/proj-{PROJECT_HASH}-{SESSION_ID}.md`
 ```
 # Session Handoff
-- session: [SESSION_ID 앞 8자]
-- pane: [PANE_ID 또는 x]
+- session: [SESSION_ID]
 - project: [프로젝트 경로]
 - task: [현재 작업 요약]
 - next_action: [다음 실행할 행동]

@@ -1,4 +1,4 @@
-# /autonomous v5.22
+# /autonomous v5.23
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -490,6 +490,9 @@ autonomous.md (범용, 전역)
 ---
 
 ## 최신 변경사항
+
+### v5.23 (2026-03-23)
+Session ID 기반 완전 격리: JSONL 파일명(세션 고유 ID)을 핸드오프 식별자로 사용. tmux pane, Warp 분할, 단일 터미널 — 환경 무관하게 모든 Claude Code 인스턴스가 독립 핸드오프 유지. 24시간 초과 자동 정리.
 
 ### v5.22 (2026-03-23)
 프로젝트+pane 독립 핸드오프: tmux 환경에서 같은 프로젝트 4개 터미널이 각각 독립 핸드오프 유지 (proj-{hash}-pane{N}.md). 비-tmux는 기존 proj-{hash}.md. 멀티 터미널 작업 시 last-write-wins 문제 해결.
