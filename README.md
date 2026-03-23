@@ -1,4 +1,4 @@
-# /autonomous v5.21
+# /autonomous v5.22
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -490,6 +490,9 @@ autonomous.md (범용, 전역)
 ---
 
 ## 최신 변경사항
+
+### v5.22 (2026-03-23)
+프로젝트+pane 독립 핸드오프: tmux 환경에서 같은 프로젝트 4개 터미널이 각각 독립 핸드오프 유지 (proj-{hash}-pane{N}.md). 비-tmux는 기존 proj-{hash}.md. 멀티 터미널 작업 시 last-write-wins 문제 해결.
 
 ### v5.21 (2026-03-23)
 Seamless Session Continuity 재설계: 프로젝트당 1 핸드오프(proj-{hash}.md 덮어쓰기 — 27건 누적 해소). task 추출 개선(마지막 응답 → user 메시지 + 🎯 작업). 🔴 발동 시 nlm 자동 업로드(비동기). Step 1.6 단순화.

@@ -1,8 +1,8 @@
-# Autonomous Mode v5.21 - 범용 프레임워크
+# Autonomous Mode v5.22 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.21: 프로젝트당 1 핸드오프 + 🔴 nlm 자동 업로드. v5.20: scarcity 제거. v5.16: 작업 유형 분기. v5.15: 🎯 작업 식별. v5.14: 실패 진단 의무. v5.13: 근본 원인 분석.
+> v5.22: 프로젝트+pane 독립 핸드오프 (멀티 터미널 격리). v5.20: scarcity 제거. v5.16: 작업 유형 분기. v5.15: 🎯 작업 식별. v5.14: 실패 진단 의무. v5.13: 근본 원인 분석.
 
 ---
 
@@ -122,11 +122,13 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 
 repomix 설정이 없으면 이 Step 건너뛰기.
 
-**Step 1.6: 핸드오프 확인** (자동 — v5.21 프로젝트당 1 핸드오프)
+**Step 1.6: 핸드오프 확인** (자동 — v5.22 프로젝트+pane 독립 격리)
 
-> Stop 훅이 프로젝트당 1개 핸드오프 파일을 자동 관리.
+> Stop 훅이 프로젝트+pane 조합별 핸드오프 파일을 자동 관리.
 
-핸드오프 파일 확인: `~/.claude/state/handoffs/proj-{PWD의 md5 앞 8자}.md`
+핸드오프 파일:
+- tmux: `~/.claude/state/handoffs/proj-{hash}-pane{PANE_ID}.md`
+- 비-tmux: `~/.claude/state/handoffs/proj-{hash}.md`
 
 **필터링**:
 1. 파일 없으면 → 건너뛰기
@@ -196,22 +198,22 @@ repomix 설정이 없으면 이 Step 건너뛰기.
 > 이 절차는 token-optimizer.sh 훅이 🔴 [CONTEXT] 메시지를 보냈을 때만 실행한다.
 
 **1단계**: 현재 원자적 작업 마무리 (진행 중인 Edit/커밋)
-**2단계**: 핸드오프 노트 작성 (프로젝트당 1개 — 덮어쓰기):
+**2단계**: 핸드오프 노트 작성 (프로젝트+pane별 1개 — 덮어쓰기):
 ```bash
 mkdir -p ~/.claude/state/handoffs/
 PROJECT_HASH=$(echo "$PWD" | md5 | cut -c1-8)
-SESSION_DIR="$HOME/.claude/projects/-$(echo "$PWD" | tr '/' '-' | sed 's/^-//')"
-SESSION_ID=$(ls -t "$SESSION_DIR"/*.jsonl 2>/dev/null | head -1 | xargs basename 2>/dev/null | cut -d. -f1 | cut -c1-8)
+PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')
+# tmux: proj-{hash}-pane{N}.md / 비-tmux: proj-{hash}.md
 ```
 ```
 # Session Handoff
 - session: [SESSION_ID 앞 8자]
+- pane: [PANE_ID 또는 x]
 - project: [프로젝트 경로]
 - task: [현재 작업 요약]
 - next_action: [다음 실행할 행동]
 - timestamp: [현재 시각]
 ```
-파일: `~/.claude/state/handoffs/proj-{PROJECT_HASH}.md`
 **3단계**: 재시작 신호:
 ```bash
 PANE_ID=$(echo "$TMUX_PANE" | tr -d '%')

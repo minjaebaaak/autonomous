@@ -47,13 +47,19 @@ if [ -d "$SESSION_DIR" ]; then
             fi
         fi
 
-        # --- 자동 핸드오프 (v5.21 — 프로젝트당 1 핸드오프) ---
+        # --- 자동 핸드오프 (v5.22 — 프로젝트+pane 독립 격리) ---
         # TASK_COMPLETE가 있으면 = 정상 종료 → 핸드오프 불필요
         if [ ! -f "$HOME/.claude/state/TASK_COMPLETE${SUFFIX}" ]; then
             SESSION_ID=$(basename "$CURRENT_SESSION" .jsonl | cut -c1-8)
             HANDOFF_DIR="$HOME/.claude/state/handoffs"
             PROJECT_HASH=$(echo "$PWD" | md5 | cut -c1-8)
-            HANDOFF_FILE="$HANDOFF_DIR/proj-${PROJECT_HASH}.md"
+            PANE_LABEL="${PANE_ID:-x}"
+            # tmux: proj-{hash}-pane{N}.md / 비-tmux: proj-{hash}.md
+            if [ -n "$PANE_ID" ]; then
+                HANDOFF_FILE="$HANDOFF_DIR/proj-${PROJECT_HASH}-pane${PANE_LABEL}.md"
+            else
+                HANDOFF_FILE="$HANDOFF_DIR/proj-${PROJECT_HASH}.md"
+            fi
 
             # JSONL에서 마지막 user 메시지 + 🎯 작업 추출
             TASK_INFO=$(tail -c 200000 "$CURRENT_SESSION" | python3 -c "
@@ -81,14 +87,15 @@ if last_user or last_target:
             if [ -n "$TASK_INFO" ]; then
                 mkdir -p "$HANDOFF_DIR"
                 cat > "$HANDOFF_FILE" << HANDOFF_EOF
-# Session Handoff (auto — v5.21)
+# Session Handoff (auto — v5.22)
 - session: ${SESSION_ID}
+- pane: ${PANE_LABEL}
 - project: $PWD
 - timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 - task: |
 $(echo "$TASK_INFO" | sed 's/^/  /')
 HANDOFF_EOF
-                echo "📋 핸드오프 갱신 (proj-${PROJECT_HASH}, session: ${SESSION_ID})"
+                echo "📋 핸드오프 갱신 (proj-${PROJECT_HASH}-pane${PANE_LABEL}, session: ${SESSION_ID})"
             fi
         fi
     fi
