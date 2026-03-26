@@ -1,4 +1,4 @@
-# /autonomous v5.25
+# /autonomous v5.26
 
 > **Claude Code를 위한 자율 실행 모드 - 범용 프레임워크**
 >
@@ -490,6 +490,9 @@ autonomous.md (범용, 전역)
 ---
 
 ## 최신 변경사항
+
+### v5.26 (2026-03-26)
+Step 1.6 hash 계산 Bash 필수: Claude가 hash를 추측/재사용하지 않도록 Bash 명령을 Step 1.6에 명시. NAVIFACT에서 fanagement hash로 검색하여 핸드오프 미발견 버그 수정.
 
 ### v5.25 (2026-03-23)
 기록 먼저 안내 나중: 🔴 훅 발동 시 훅 자체가 핸드오프 파일 생성 + nlm 업로드 완료한 후 /clear 안내. Claude 행동에 의존하지 않음. "새 세션에서 하겠습니다 → /clear 하세요" 시 기록 누락 근본 해결.

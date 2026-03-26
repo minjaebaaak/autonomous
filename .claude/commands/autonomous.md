@@ -1,8 +1,8 @@
-# Autonomous Mode v5.25 - 범용 프레임워크
+# Autonomous Mode v5.26 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.25: 🔴 훅이 기록 먼저, 안내 나중 (핸드오프+nlm 자동 완료 후 /clear 안내). v5.24: 핸드오프 우선 확인. v5.23: session ID 격리. v5.20: scarcity 제거.
+> v5.26: Step 1.6 hash 계산 Bash 필수 (NAVIFACT hash 오류 수정). v5.25: 훅 기록 먼저 안내 나중. v5.24: 핸드오프 우선 확인. v5.23: session ID 격리.
 
 ---
 
@@ -122,15 +122,17 @@ mcp__plugin_repomix-mcp_repomix__pack_codebase({
 
 repomix 설정이 없으면 이 Step 건너뛰기.
 
-**Step 1.6: 핸드오프 확인** (자동 — v5.23 session ID 기반 완전 격리)
+**Step 1.6: 핸드오프 확인** (자동 — v5.26 hash 계산 필수)
 
-> 각 Claude Code 인스턴스는 고유 JSONL 세션 파일을 가진다. 이것이 유일한 식별자.
-> tmux, Warp, 단일 터미널 — 환경 무관하게 동일한 방식으로 격리.
+> 🔴 hash를 추측하지 말고 반드시 아래 Bash 명령으로 계산할 것.
 
-핸드오프 파일: `~/.claude/state/handoffs/proj-{hash}-{session_id}.md`
+```bash
+PROJECT_HASH=$(echo "$PWD" | md5 | cut -c1-8)
+ls -t ~/.claude/state/handoffs/proj-${PROJECT_HASH}-*.md 2>/dev/null
+```
 
 **필터링**:
-1. `proj-{현재 프로젝트 hash}-*.md` 패턴으로 해당 프로젝트 핸드오프만 검색
+1. 위 명령 결과에서 해당 프로젝트 핸드오프만 검색
 2. 24시간 초과 → 무시
 3. 파일명의 session ID = 현재 세션 → 무시 (자기 자신)
 4. `$ARGUMENTS`가 있으면 (새 작업) → 무시
