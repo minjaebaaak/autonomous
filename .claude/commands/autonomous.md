@@ -1,8 +1,28 @@
-# Autonomous Mode v5.26 - 범용 프레임워크
+# Autonomous Mode v5.27 - 범용 프레임워크
 
 > **`/autonomous [작업]` 하나로 모든 최적화가 자동 적용됩니다.**
 >
-> v5.26: Step 1.6 hash 계산 Bash 필수 (NAVIFACT hash 오류 수정). v5.25: 훅 기록 먼저 안내 나중. v5.24: 핸드오프 우선 확인. v5.23: session ID 격리.
+> v5.27: mybrain 상시 기반 통합. v5.26: Step 1.6 hash 계산 Bash 필수. v5.25: 훅 기록 먼저 안내 나중. v5.24: 핸드오프 우선 확인.
+
+---
+
+## 인지 기반: mybrain
+
+> **이 프레임워크는 mybrain 위에서 동작한다.**
+> 뇌는 단계가 아니라 상태. 모든 판단에 뇌가 관여한다.
+
+**상시 활성**:
+- GENESIS.md가 CLAUDE.md에 주입됨 (SessionStart hook)
+- 교정 자동 감지 (UserPromptSubmit hook)
+- 교훈은 뉴런으로 축적되어 다음 세션에 전달
+
+**모든 행동에 적용**:
+- 판단 전: "이 판단에 관련된 뉴런이 있는가?" → brainstem 규칙 우선
+- 실행 후: 실패 → 뉴런 fire (counter 증가). 성공 → dopamine
+- 교정 감지: MCP `correct(path, text)` 즉시 호출. 예외 없음.
+- 칭찬 감지: MCP `signal(path, "dopamine")` 즉시 호출.
+
+**뇌 경로**: `$MYBRAIN_ROOT` (환경변수) 또는 hooks가 자동 설정
 
 ---
 
@@ -577,10 +597,16 @@ bash scripts/conversation-sync.sh --title "<작업명>"
    - TASK_COMPLETE 터치 시 SESSION_RESTART는 터치하지 않음
    - SESSION_RESTART = 핸드오프 전용
    - 🔴 **v5.10: TASK_COMPLETE 터치 후 모든 도구 호출 금지** — PreToolUse 훅이 자동 차단. 텍스트 출력만 가능.
+10. 🔴 mybrain 동기화 (뇌 변경 시 — TASK_COMPLETE 전에 실행):
+   ```bash
+   if [ -n "$MYBRAIN_ROOT" ] && [ -d "$MYBRAIN_ROOT/../.git" ]; then
+     cd "$MYBRAIN_ROOT/.." && git add -A && git diff --cached --quiet || git commit -m "brain: session update" && git push 2>/dev/null
+   fi
+   ```
 ```
 
 **금지**: 커밋/배포 질문 | 커밋 없이 종료 | 푸시/배포 생략 | TASK_COMPLETE 없이 "완료" 선언 | **TASK_COMPLETE 후 도구 호출**
-**점검**: 커밋&푸시 완료? 배포 완료? TASK_COMPLETE 전송?
+**점검**: 커밋&푸시 완료? 배포 완료? mybrain 동기화? TASK_COMPLETE 전송?
 
 ### Phase 7: 검증 (완료 후 자동)
 
@@ -599,6 +625,28 @@ CLAUDE.md에 정의된 프로젝트별 검증 명령 사용. 없으면 기본:
 ### Phase 9: 🔄 랄프 루프
 > Phase 8 피드백 루프 3회 실패 시 `/infinite-loop` 커맨드로 전환 (최대 10회, 표지판 추가 방식).
 > 10회 실패 시 → 사용자에게 명시적 보고 + 수동 개입 요청. 자동 종료 금지.
+
+---
+
+## 상시 규칙: 인지 프로토콜
+
+> Phase와 무관하게 모든 순간에 적용.
+
+### 교정 감지 → 즉시 기록
+| 감지 패턴 | 행동 |
+|----------|------|
+| "아니", "다시", "왜 또", "그거 말고" | MCP `correct(path="[영역]/[카테고리]/[규칙명]", text="교정 사유")` |
+| "좋아", "맞아", "잘했어", "완벽" | MCP `signal(path, "dopamine")` |
+| 같은 실수 3회 | MCP `signal(path, "bomb")` |
+
+교정을 감지하고 기록하지 않으면 규칙 위반.
+
+### 행동 원칙 (뇌에서 유래)
+- 모르면 조사. 조사 없이 판단 금지.
+- 토큰 아끼지 말고 최상의 효과에 집중.
+- 컨텍스트 남았으면 새 세션 제안 금지.
+- 검증 없이 전달 금지.
+- 실제 환경 확인 없이 보고 금지.
 
 ---
 
